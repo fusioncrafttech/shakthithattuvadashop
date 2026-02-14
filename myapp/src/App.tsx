@@ -12,7 +12,7 @@ import { Profile } from './pages/Profile';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { History } from './pages/History';
-import Handcart from './pages/Handcart';
+import Handcart from './pages/handcart';
 import { AdminGuard } from './components/admin/AdminGuard';
 import { AdminLayout } from './components/admin/AdminLayout';
 import { AdminDashboard } from './pages/admin/Dashboard';

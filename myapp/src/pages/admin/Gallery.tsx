@@ -28,6 +28,7 @@ export function AdminGallery() {
   const [editing, setEditing] = useState<GalleryItem | null>(null);
   const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,6 +48,7 @@ export function AdminGallery() {
     setEditing(null);
     setForm(defaultForm);
     setImageFile(null);
+    setVideoFile(null);
     setModalOpen(true);
   };
 
@@ -59,6 +61,7 @@ export function AdminGallery() {
       sort_order: g.sort_order ?? 0,
     });
     setImageFile(null);
+    setVideoFile(null);
     setModalOpen(true);
   };
 
@@ -73,6 +76,13 @@ export function AdminGallery() {
           STORAGE_BUCKET_GALLERY,
           `/${Date.now()}-${imageFile.name}`,
           imageFile
+        );
+      }
+      if (form.type === 'video' && videoFile) {
+        url = await uploadImage(
+          STORAGE_BUCKET_GALLERY,
+          `/${Date.now()}-${videoFile.name}`,
+          videoFile
         );
       }
       const payload = {
@@ -238,15 +248,24 @@ export function AdminGallery() {
 
           {form.type === 'video' && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Video URL</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Video (upload or URL)</label>
+              <input
+                type="file"
+                accept="video/*"
+                onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
+                className="mb-2 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm"
+              />
               <input
                 type="url"
-                placeholder="YouTube, Vimeo, or direct video URL"
+                placeholder="Or paste YouTube, Vimeo, or direct video URL"
                 value={form.url}
                 onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                required={form.type === 'video'}
+                required={form.type === 'video' && !videoFile}
               />
+              {form.url && !videoFile && (
+                <p className="mt-1 text-xs text-gray-500">Preview: {form.url}</p>
+              )}
             </div>
           )}
 
@@ -283,7 +302,7 @@ export function AdminGallery() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={saving || (form.type === 'image' && !form.url && !imageFile) || (form.type === 'video' && !form.url)}
+              disabled={saving || (form.type === 'image' && !form.url && !imageFile) || (form.type === 'video' && !form.url && !videoFile)}
               className="rounded-xl bg-primary px-5 py-2.5 font-semibold text-white shadow-lg disabled:opacity-60"
             >
               {saving ? 'Saving...' : editing ? 'Update' : 'Add'}

@@ -22,15 +22,34 @@ const promises = [
 ];
 
 function isYouTubeOrVimeo(url: string): boolean {
-  return /youtube\.com|youtu\.be|vimeo\.com/i.test(url);
+  return /youtube\.com|youtu\.be|vimeo\.com/i.test(url || '');
+}
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  const u = (url || '').trim();
+  if (!u) return null;
+  // Extract video ID from: watch?v=ID, youtu.be/ID, embed/ID, v/ID, shorts/ID (handles m.youtube, www, youtube-nocookie)
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/i,
+    /(?:youtu\.be\/)([a-zA-Z0-9_-]+)/i,
+    /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/i,
+    /(?:youtube\.com\/v\/)([a-zA-Z0-9_-]+)/i,
+    /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]+)/i,
+  ];
+  for (const re of patterns) {
+    const m = u.match(re);
+    if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  }
+  return null;
 }
 
 function getEmbedUrl(url: string): string {
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
-  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  const u = (url || '').trim();
+  const yt = getYouTubeEmbedUrl(u);
+  if (yt) return yt;
+  const vimeoMatch = u.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-  return url;
+  return u;
 }
 
 export function About() {
@@ -112,21 +131,31 @@ export function About() {
                 </div>
               ) : (
                 <div>
-                  {isYouTubeOrVimeo(item.url) ? (
-                    <div className="aspect-video w-full">
+                  {!item.url?.trim() ? (
+                    <div className="flex aspect-video w-full items-center justify-center rounded-t-2xl bg-gray-200 text-gray-500">
+                      <span className="text-sm">No video URL</span>
+                    </div>
+                  ) : isYouTubeOrVimeo(item.url) ? (
+                    <div className="relative aspect-video w-full min-h-[200px] bg-black">
                       <iframe
                         src={getEmbedUrl(item.url)}
                         title={item.caption || 'Video'}
-                        className="h-full w-full"
+                        width="100%"
+                        height="100%"
+                        className="absolute inset-0 h-full w-full rounded-t-2xl"
                         allowFullScreen
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        frameBorder={0}
+                        referrerPolicy="strict-origin-when-cross-origin"
                       />
                     </div>
                   ) : (
                     <video
                       src={item.url}
                       controls
-                      className="aspect-video w-full object-cover"
+                      preload="metadata"
+                      playsInline
+                      className="aspect-video w-full object-cover bg-gray-900"
                       poster=""
                     >
                       Your browser does not support the video tag.

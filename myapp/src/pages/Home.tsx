@@ -23,7 +23,7 @@ export function Home() {
       .finally(() => setLoading(false));
   }, []);
 
-  const popularProducts = products.filter((p) => p.isPopular || p.is_featured);
+  const popularProducts = products.filter((p) => p.isPopular);
   const todaySpecials = products.filter((p) => p.isTodaySpecial);
 
   if (error) {
@@ -60,7 +60,7 @@ export function Home() {
         )}
       </section>
 
-      {/* 3. Popular / Featured */}
+      {/* 3. Popular Items */}
       <section className="mb-10 md:mb-20">
         <h2 className="mb-6 text-xl font-bold text-gray-900 md:text-2xl">Popular Items</h2>
         {loading ? (

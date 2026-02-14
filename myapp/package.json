@@ -5,7 +5,7 @@
   "homepage": "https://fusioncrafttech.github.io/shakthithattuvadashop",
   "type": "module",
   "scripts": {
-    "start": "vite",
+    "dev": "vite",
     "build": "vite build",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"

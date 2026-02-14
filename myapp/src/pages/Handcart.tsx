@@ -25,7 +25,7 @@ export default function Handcart() {
   };
 
   useEffect(() => {
-    const t = setTimeout(() => setAnimationPhase('idle'), 2500);
+    const t = setTimeout(() => setAnimationPhase('idle'), 3200);
     return () => clearTimeout(t);
   }, []);
 
@@ -78,9 +78,8 @@ export default function Handcart() {
                 : { x: 0, opacity: 1 }
             }
             transition={{
-              type: 'spring',
-              stiffness: 80,
-              damping: 22,
+              duration: 2.8,
+              ease: 'easeOut',
             }}
             className="flex h-full w-full max-w-2xl items-center justify-center px-2 sm:px-4"
           >
@@ -108,7 +107,7 @@ export default function Handcart() {
             {(animationPhase === 'enter' || animationPhase === 'idle') && (
               <style>{`
                 #LeftWheel, #RightWheel {
-                  animation: handcart-wheel 1.8s ease-out forwards;
+                  animation: handcart-wheel 2.8s ease-out forwards;
                 }
                 @keyframes handcart-wheel {
                   from { transform: rotate(0deg); }

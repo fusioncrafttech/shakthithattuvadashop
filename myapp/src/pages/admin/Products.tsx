@@ -39,6 +39,8 @@ export function AdminProducts() {
   const [error, setError] = useState<string | null>(null);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const categoryRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -69,6 +71,8 @@ export function AdminProducts() {
     setCategoryOpen(false);
     setForm({ ...defaultForm, categoryId: categories[0]?.id ?? '' });
     setImageFile(null);
+    imageInputRef.current && (imageInputRef.current.value = '');
+    setFormKey((k) => k + 1);
     setModalOpen(true);
   };
 
@@ -88,6 +92,8 @@ export function AdminProducts() {
       is_featured: p.is_featured ?? false,
     });
     setImageFile(null);
+    imageInputRef.current && (imageInputRef.current.value = '');
+    setFormKey((k) => k + 1);
     setModalOpen(true);
   };
 
@@ -140,6 +146,12 @@ export function AdminProducts() {
 
     try {
       await Promise.race([run(), timeout]);
+      setForm({ ...defaultForm, categoryId: categories[0]?.id ?? '' });
+      setImageFile(null);
+      imageInputRef.current && (imageInputRef.current.value = '');
+      setEditing(null);
+      setError(null);
+      setFormKey((k) => k + 1);
       setModalOpen(false);
       load();
     } catch (err) {
@@ -253,7 +265,7 @@ export function AdminProducts() {
         title={editing ? 'Edit Product' : 'Add Product'}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form key={formKey} onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
               {error}
@@ -368,6 +380,7 @@ export function AdminProducts() {
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Image</label>
             <input
+              ref={imageInputRef}
               type="file"
               accept="image/*"
               onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
