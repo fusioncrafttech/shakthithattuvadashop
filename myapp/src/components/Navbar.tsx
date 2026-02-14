@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -14,6 +15,7 @@ export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { totalItems } = useCart();
+  const { isAdmin } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -131,6 +133,14 @@ export function Navbar() {
                 </motion.span>
               )}
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="hidden rounded-xl bg-[#E53935]/10 px-4 py-2 text-sm font-semibold text-[#E53935] transition-colors hover:bg-[#E53935]/20 md:block"
+              >
+                Admin
+              </Link>
+            )}
             <Link
               to="/profile"
               className="hidden rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-[#E53935] hover:text-[#E53935] md:block"
@@ -212,6 +222,15 @@ export function Navbar() {
                     </span>
                   ) : null}
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setDrawerOpen(false)}
+                    className="mx-2 rounded-xl px-4 py-3.5 text-base font-medium text-[#E53935] transition-colors active:bg-[#E53935]/10"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
                 <Link
                   to="/profile"
                   onClick={() => setDrawerOpen(false)}

@@ -3,9 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProductCard } from '../components/ProductCard';
 import { ProductModal } from '../components/ProductModal';
-import { products } from '../data/products';
-import { categories } from '../data/categories';
-import type { Product } from '../types';
+import { fetchProducts, fetchCategories } from '../lib/admin-data';
+import type { Product, Category } from '../types';
 
 export function Shop() {
   const [searchParams] = useSearchParams();
@@ -13,6 +12,20 @@ export function Shop() {
   const searchQuery = searchParams.get('q')?.toLowerCase().trim() || '';
   const [activeCategory, setActiveCategory] = useState(categorySlug || 'all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([fetchProducts(), fetchCategories()])
+      .then(([p, c]) => {
+        setProducts(p);
+        setCategories(c);
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     if (categorySlug) setActiveCategory(categorySlug);
@@ -28,11 +41,21 @@ export function Shop() {
       list = list.filter(
         (p) =>
           p.name.toLowerCase().includes(searchQuery) ||
-          p.description.toLowerCase().includes(searchQuery)
+          (p.description ?? '').toLowerCase().includes(searchQuery)
       );
     }
     return list;
-  }, [activeCategory, searchQuery]);
+  }, [products, categories, activeCategory, searchQuery]);
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10">
+        <div className="rounded-2xl bg-red-50 p-4 text-red-700">{error}</div>
+      </div>
+    );
+  }
+
+  const categoryTabs = [{ id: 'all', slug: 'all', name: 'All', image: '' }, ...categories];
 
   return (
     <motion.div
@@ -52,7 +75,7 @@ export function Shop() {
 
       {/* Category Filter Tabs */}
       <div className="mb-8 flex gap-2 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap">
-        {[{ id: 'all', slug: 'all', name: 'All' }, ...categories].map((cat) => (
+        {categoryTabs.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.slug)}
@@ -67,6 +90,14 @@ export function Shop() {
         ))}
       </div>
 
+      {loading ? (
+        <div className="grid grid-cols-3 gap-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="aspect-square animate-pulse rounded-2xl bg-gray-200 md:aspect-[3/4]" />
+          ))}
+        </div>
+      ) : (
+        <>
       {/* Mobile: 3-column grid, tap product to open modal */}
       <div className="grid grid-cols-3 gap-2 md:hidden">
         {filteredProducts.map((product) => (
@@ -113,6 +144,8 @@ export function Shop() {
         <p className="py-12 text-center text-gray-500">
           {searchQuery ? 'No products match your search.' : 'No items in this category.'}
         </p>
+      )}
+        </>
       )}
     </motion.div>
   );

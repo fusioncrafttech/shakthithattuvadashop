@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-const WHATSAPP_NUMBER = '919876543210'; // Replace with real number
+const WHATSAPP_NUMBER = '919790461432'; // Replace with real number
 const MESSAGE = 'Hi! I would like to place an order.';
 
 export function WhatsAppButton() {

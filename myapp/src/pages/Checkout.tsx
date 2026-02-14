@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 type Step = 1 | 2;
 
@@ -14,7 +15,14 @@ export function Checkout() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { items, totalPrice, clearCart } = useCart();
+  const { isAuthenticated, openAuthModal } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      openAuthModal('/checkout');
+    }
+  }, [isAuthenticated, openAuthModal]);
 
   const validateStep1 = () => {
     const e: Record<string, string> = {};

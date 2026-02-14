@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 export function Cart() {
   const { items, updateQuantity, removeItem, totalPrice, totalItems } = useCart();
+  const { isAuthenticated, openAuthModal } = useAuth();
 
   if (items.length === 0) {
     return (
@@ -35,9 +37,19 @@ export function Cart() {
       animate={{ opacity: 1 }}
       className="mx-auto max-w-3xl px-4 py-6 pb-36 md:py-10 md:pb-12"
     >
-      <h1 className="mb-6 text-xl font-bold text-gray-900 md:mb-8 md:text-2xl">
+      {/* Mobile-only brand heading & intro */}
+      <div className="mb-6 md:hidden">
+        <h1 className="text-lg font-bold text-red-500 flex justify-center">
+          Shakthi Thattuvada Set Corner
+        </h1>
+        <p className="mt-1 text-sm text-gray-600">
+          Fresh thattu vadai set and South Indian snacks since 1996. Your order is being prepared with care.
+        </p>
+      </div>
+
+      <h2 className="mb-6 text-xl font-bold text-gray-900 md:mb-8 md:text-2xl">
         Cart ({totalItems})
-      </h1>
+      </h2>
 
       <div className="space-y-4">
         {items.map(({ product, quantity }) => (
@@ -104,12 +116,22 @@ export function Cart() {
               ₹{totalPrice}
             </p>
           </div>
-          <Link
-            to="/checkout"
-            className="shrink-0 rounded-xl bg-[#E53935] px-6 py-3.5 text-center font-semibold text-white shadow-lg active:scale-[0.98] md:px-8"
-          >
-            Checkout
-          </Link>
+          {isAuthenticated ? (
+            <Link
+              to="/checkout"
+              className="shrink-0 rounded-xl bg-[#E53935] px-6 py-3.5 text-center font-semibold text-white shadow-lg active:scale-[0.98] md:px-8"
+            >
+              Checkout
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openAuthModal('/checkout')}
+              className="shrink-0 rounded-xl bg-[#E53935] px-6 py-3.5 text-center font-semibold text-white shadow-lg active:scale-[0.98] md:px-8"
+            >
+              Checkout
+            </button>
+          )}
         </div>
       </div>
     </motion.div>

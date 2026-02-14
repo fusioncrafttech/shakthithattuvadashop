@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import type { GalleryItem } from '../types';
+import { fetchGallery } from '../lib/admin-data';
 
 const SEO_TITLE = 'Shakthi Thattuvadaset Corner | Best Thattu Vadai Set & Traditional Snacks Since 1996';
 const SEO_DESCRIPTION =
@@ -19,13 +21,25 @@ const promises = [
   { title: 'Hygiene First', desc: 'Clean kitchen, safe packaging, contactless delivery.' },
 ];
 
-const images = [
-  'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=300&fit=crop',
-  'https://images.unsplash.com/photo-1604329760661-e71dc83f2a26?w=400&h=300&fit=crop',
-];
+function isYouTubeOrVimeo(url: string): boolean {
+  return /youtube\.com|youtu\.be|vimeo\.com/i.test(url);
+}
+
+function getEmbedUrl(url: string): string {
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  return url;
+}
 
 export function About() {
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+
+  useEffect(() => {
+    fetchGallery().then(setGallery).catch(() => setGallery([]));
+  }, []);
+
   useEffect(() => {
     document.title = SEO_TITLE;
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -73,18 +87,59 @@ export function About() {
       </div>
 
       <h2 className="mb-6 text-2xl font-bold text-gray-900">Gallery</h2>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {images.map((src, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 * i }}
-            className="overflow-hidden rounded-2xl shadow-lg"
-          >
-            <img src={src} alt="" className="aspect-[4/3] w-full object-cover" />
-          </motion.div>
-        ))}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {gallery.length === 0 ? (
+          <p className="col-span-full text-center text-gray-500">No gallery items yet. Check back later.</p>
+        ) : (
+          gallery.map((item, i) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.05 * i }}
+              className="overflow-hidden rounded-2xl shadow-lg"
+            >
+              {item.type === 'image' ? (
+                <div>
+                  <img
+                    src={item.url}
+                    alt={item.caption || 'Gallery'}
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                  {item.caption && (
+                    <p className="bg-gray-50 px-4 py-2 text-sm text-gray-600">{item.caption}</p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  {isYouTubeOrVimeo(item.url) ? (
+                    <div className="aspect-video w-full">
+                      <iframe
+                        src={getEmbedUrl(item.url)}
+                        title={item.caption || 'Video'}
+                        className="h-full w-full"
+                        allowFullScreen
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      />
+                    </div>
+                  ) : (
+                    <video
+                      src={item.url}
+                      controls
+                      className="aspect-video w-full object-cover"
+                      poster=""
+                    >
+                      Your browser does not support the video tag.
+                    </video>
+                  )}
+                  {item.caption && (
+                    <p className="bg-gray-50 px-4 py-2 text-sm text-gray-600">{item.caption}</p>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          ))
+        )}
       </div>
     </motion.div>
   );

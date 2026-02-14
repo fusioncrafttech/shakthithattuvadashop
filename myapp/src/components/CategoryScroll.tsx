@@ -17,7 +17,7 @@ export function CategoryScroll({ categories }: CategoryScrollProps) {
           transition={{ delay: i * 0.05 }}
         >
           <Link
-            to={`/shop?category=${cat.slug}`}
+            to={cat.slug === '90s-kid-special' ? '/90skidspecial' : `/shop?category=${cat.slug}`}
             className="flex flex-shrink-0 flex-col items-center gap-2"
           >
             <div className="group relative h-20 w-20 overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl md:h-24 md:w-24">

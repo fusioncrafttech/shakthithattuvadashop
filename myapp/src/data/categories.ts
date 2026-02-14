@@ -1,10 +1,11 @@
 import type { Category } from '../types';
 
 export const categories: Category[] = [
-  { id: '1', name: 'Thattuvada', slug: 'thattuvada', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/cgxaivem0cp8n56m1u1r' },
-  { id: '2', name: 'Bajji', slug: 'bajji', image: 'https://images.unsplash.com/photo-1639024471283-03518883512d?w=200&h=200&fit=crop' },
-  { id: '3', name: 'Bonda', slug: 'bonda', image: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=200&h=200&fit=crop' },
-  { id: '4', name: 'Vada', slug: 'vada', image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=200&h=200&fit=crop' },
-  { id: '5', name: 'Samosas', slug: 'samosas', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=200&h=200&fit=crop' },
-  { id: '6', name: 'Beverages', slug: 'beverages', image: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=200&h=200&fit=crop' },
+  { id: '1', name: 'Thattuvada set', slug: 'thattuvada', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/cgxaivem0cp8n56m1u1r' },
+  { id: '2', name: 'Pori Varieties', slug: 'pori', image: 'https://b.zmtcdn.com/data/pictures/chains/0/18922970/d8ab3231f44fa57f27f2f7857560f922.jpg' },
+  { id: '3', name: 'Norukal Varieties', slug: 'norukal', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/2a3348b57198771c136e2bdcec74d090' },
+  { id: '4', name: 'Bun Varieties', slug: 'bun', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/eszpucbfjdh1ai30xftb' },
+  { id: '5', name: 'Combo Varieties', slug: 'combo', image: 'https://b.zmtcdn.com/data/pictures/chains/0/18922970/d8ab3231f44fa57f27f2f7857560f922.jpg' },
+  { id: '6', name: 'Today Special', slug: 'today-special', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/f9z0nqp5qb0p4j1o1wo2' },
+  { id: '90s', name: "90's Kid Special", slug: '90s-kid-special', image: 'https://media-assets.swiggy.com/swiggy/image/upload/f_auto,q_auto,fl_lossy/f9z0nqp5qb0p4j1o1wo2' },
 ];

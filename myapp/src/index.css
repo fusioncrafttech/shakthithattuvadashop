@@ -20,13 +20,18 @@
     display: none;
   }
   body {
-    @apply bg-[#FAFAFA] text-gray-800 antialiased;
+    @apply bg-[#fafafa] text-gray-800 antialiased;
     font-family: var(--font-sans);
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   body::-webkit-scrollbar {
     display: none;
+  }
+  /* Keep fixed elements (e.g. bottom nav) relative to viewport; avoid transforms on #root */
+  #root {
+    min-height: 100%;
+    isolation: isolate;
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);

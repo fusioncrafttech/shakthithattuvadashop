@@ -20,7 +20,7 @@ export function LoadingScreen({ isLoading }: LoadingScreenProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            Shakthi Thattuvadaset
+            Shakthi Thattuvadaset Corner
           </motion.div>
           <motion.div
             className="h-1 w-24 overflow-hidden rounded-full bg-[#FFD54F]"

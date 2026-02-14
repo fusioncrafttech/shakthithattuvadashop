@@ -1,0 +1,4 @@
+-- Add phone and address to profiles for signup / profile storage
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS phone TEXT,
+  ADD COLUMN IF NOT EXISTS address TEXT;
