@@ -35,7 +35,7 @@ function App() {
     <AuthProvider>
       <CartProvider>
         <LoadingScreen isLoading={loading} />
-        <BrowserRouter>
+        <BrowserRouter basename="/shakthithattuvadashop">
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Home />} />
