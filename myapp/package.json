@@ -1,7 +1,7 @@
 
 {
-  "homepage": "https://fusioncrafttech.github.io/shakthithattuvadashop"
-  "name": "myapp"
+  "homepage": "https://fusioncrafttech.github.io/shakthithattuvadashop",
+  "name": "myapp",
   "private": true,
   "version": "0.0.0",
   "type": "module",
