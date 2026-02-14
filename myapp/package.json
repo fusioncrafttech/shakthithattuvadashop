@@ -1,9 +1,9 @@
 
 {
-  "homepage": "https://fusioncrafttech.github.io/shakthithattuvadashop",
   "name": "myapp",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.0.0",
+  "homepage": "https://fusioncrafttech.github.io/shakthithattuvadashop",
   "type": "module",
   "scripts": {
   "start": "react-scripts start",
