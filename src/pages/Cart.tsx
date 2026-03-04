@@ -52,9 +52,9 @@ export function Cart() {
       </h2>
 
       <div className="space-y-4">
-        {items.map(({ product, quantity }) => (
+        {items.map(({ product, quantity, selectedAddons, totalPrice }) => (
           <motion.div
-            key={product.id}
+            key={`${product.id}-${selectedAddons?.map(a => a.id).join('-') || 'no-addons'}`}
             layout
             className="flex gap-3 rounded-2xl bg-white p-3 shadow-lg md:gap-4 md:p-5"
             initial={{ opacity: 0, y: 10 }}
@@ -69,8 +69,23 @@ export function Cart() {
               <h3 className="truncate text-base font-semibold text-gray-900 md:text-lg">
                 {product.name}
               </h3>
+              
+              {/* Display selected add-ons */}
+              {selectedAddons && selectedAddons.length > 0 && (
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {selectedAddons.map((addon) => (
+                    <span
+                      key={addon.id}
+                      className="inline-flex items-center rounded-full bg-[#FFF8E1] px-2 py-0.5 text-xs font-medium text-[#E53935]"
+                    >
+                      {addon.addonName}
+                    </span>
+                  ))}
+                </div>
+              )}
+              
               <p className="mt-0.5 text-sm font-semibold text-[#E53935] md:text-base">
-                ₹{product.price}
+                ₹{totalPrice || product.price}
               </p>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                 <div className="inline-flex items-center rounded-xl border border-gray-200 bg-gray-50">

@@ -20,9 +20,21 @@ export interface Category {
   created_at?: string;
 }
 
+export interface CategoryAddon {
+  id: string;
+  categoryId: string;
+  addonName: string;
+  price: number;
+  isActive: boolean;
+  sortOrder: number;
+  created_at?: string;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedAddons?: CategoryAddon[];
+  totalPrice?: number;
 }
 
 export interface OfferBanner {

@@ -1,22 +1,47 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { CustomizationModal } from './CustomizationModal';
 import type { Product } from '../types';
 
 interface ProductModalProps {
   product: Product;
+  categorySlug: string;
   onClose: () => void;
 }
 
-export function ProductModal({ product, onClose }: ProductModalProps) {
-  const { addItem } = useCart();
+export function ProductModal({ product, categorySlug, onClose }: ProductModalProps) {
+  const [showCustomization, setShowCustomization] = useState(false);
   const [added, setAdded] = useState(false);
+  const { addItem } = useCart();
 
   const handleAddToCart = () => {
-    addItem(product);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    // Skip customization for 90's Kid Special and Bun Varieties
+    if (categorySlug === '90s-kid-special' || categorySlug === 'bun') {
+      // Add directly to cart
+      addItem(product);
+      setAdded(true);
+      setTimeout(() => {
+        onClose();
+      }, 1000);
+      return;
+    }
+    
+    setShowCustomization(true);
   };
+
+  if (showCustomization) {
+    return (
+      <CustomizationModal
+        product={product}
+        categorySlug={categorySlug}
+        onClose={() => {
+          setShowCustomization(false);
+          if (added) onClose();
+        }}
+      />
+    );
+  }
 
   return (
     <motion.div
@@ -63,17 +88,18 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
           <p className="mt-2 text-sm leading-snug text-gray-600 sm:text-base">
             {product.description}
           </p>
-          <p className="mt-3 text-lg font-bold text-primary sm:text-xl">
+          <p className="mt-3 text-lg font-bold text-[#E53935] sm:text-xl">
             ₹{product.price}
           </p>
           <div className="mt-5 flex flex-col gap-4 sm:mt-6">
             <motion.button
               type="button"
               onClick={handleAddToCart}
-              className="w-full rounded-xl bg-primary py-3.5 font-semibold text-white transition-colors hover:bg-primary-dark active:bg-[#B71C1C] touch-manipulation sm:py-4"
+              className="w-full rounded-xl bg-[#E53935] py-3.5 font-semibold text-white transition-colors hover:bg-[#C62828] active:bg-[#B71C1C] touch-manipulation sm:py-4"
               whileTap={{ scale: 0.98 }}
             >
-              {added ? 'Added to cart ✓' : 'Add to Cart'}
+              {added ? 'Added to cart ✓' : 
+               (categorySlug === '90s-kid-special' || categorySlug === 'bun') ? 'Add to Cart' : 'Customize & Add to Cart'}
             </motion.button>
             {added && (
               <motion.p

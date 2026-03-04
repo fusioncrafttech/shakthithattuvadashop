@@ -1,4 +1,4 @@
-import type { Product, Category, OfferBanner, Order, Profile, GalleryItem } from '../types';
+import type { Product, Category, OfferBanner, Order, Profile, GalleryItem, CategoryAddon } from '../types';
 import { supabase } from './supabase';
 import {
   STORAGE_BUCKET_PRODUCTS,
@@ -394,6 +394,33 @@ export interface DashboardStats {
   lowStockCount: number;
   salesByDay: { date: string; day: string; total: number }[];
   recentOrders: Order[];
+}
+
+function mapCategoryAddonRow(r: Record<string, unknown>): CategoryAddon {
+  return {
+    id: r.id as string,
+    categoryId: r.category_id as string,
+    addonName: r.addon_name as string,
+    price: Number(r.price),
+    isActive: r.is_active as boolean,
+    sortOrder: r.sort_order != null ? Number(r.sort_order) : 0,
+    created_at: r.created_at as string | undefined,
+  };
+}
+
+export async function fetchCategoryAddons(categoryId: string): Promise<CategoryAddon[]> {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('category_addons')
+      .select('*')
+      .eq('category_id', categoryId)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((r) => mapCategoryAddonRow(r as Record<string, unknown>));
+  }
+  // Return mock data for development if no supabase
+  return [];
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {

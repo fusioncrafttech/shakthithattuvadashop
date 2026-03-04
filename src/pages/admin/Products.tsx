@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Product, Category } from '../../types';
+import { supabase } from '../../lib/supabase';
 import {
   fetchProducts,
   fetchCategories,
@@ -105,23 +106,40 @@ export function AdminProducts() {
       setError('Please select a category.');
       return;
     }
+    
+    // Check Supabase configuration first
+    if (!supabase) {
+      setError('Database not configured. Please check your Supabase configuration in .env file.');
+      return;
+    }
+    
     setSaving(true);
-    const REQUEST_TIMEOUT_MS = 25000;
+    const REQUEST_TIMEOUT_MS = 60000;
 
     const run = async () => {
+      console.log('Starting product upload process...');
       let imageUrl = (form.image || '').trim();
+      
       if (imageFile) {
+        console.log('Uploading image:', imageFile.name, 'Size:', imageFile.size);
         try {
+          const startTime = Date.now();
           imageUrl = await uploadImage(
             STORAGE_BUCKET_PRODUCTS,
             `/${Date.now()}-${imageFile.name}`,
             imageFile
           );
+          console.log('Image upload completed in:', Date.now() - startTime, 'ms');
         } catch (uploadErr) {
+          console.error('Image upload error:', uploadErr);
           const msg = uploadErr instanceof Error ? uploadErr.message : String(uploadErr);
           throw new Error(`Image upload failed: ${msg}. Create without image or fix storage.`);
         }
+      } else {
+        console.log('No image file, using existing URL:', imageUrl);
       }
+      
+      console.log('Creating product payload...');
       const payload = {
         name: form.name.trim(),
         description: form.description.trim(),
@@ -133,11 +151,9 @@ export function AdminProducts() {
         isTodaySpecial: form.isTodaySpecial,
         is_featured: form.is_featured,
       };
-      if (editing) {
-        await updateProduct(editing.id, payload);
-      } else {
-        await createProduct(payload);
-      }
+      
+      console.log('Payload:', payload);
+      return payload;
     };
 
     const timeout = new Promise<never>((_, reject) =>
@@ -145,7 +161,40 @@ export function AdminProducts() {
     );
 
     try {
-      await Promise.race([run(), timeout]);
+      console.log('Starting database operation...');
+      const payload = await Promise.race([run(), timeout]);
+      
+      console.log('Database operation type:', editing ? 'UPDATE' : 'CREATE');
+      
+      if (editing) {
+        console.log('Updating product with ID:', editing.id);
+        await updateProduct(editing.id, payload);
+        console.log('Product updated successfully');
+      } else {
+        console.log('Creating new product...');
+        await createProduct(payload);
+        console.log('Product created successfully');
+      }
+      
+      // Create the updated/new product object
+      const updatedProduct = {
+        ...payload,
+        id: editing?.id || `temp-${Date.now()}`,
+        created_at: editing?.created_at || new Date().toISOString(),
+      };
+      
+      console.log('Updating local state with product:', updatedProduct);
+      
+      // Update local state instead of reloading
+      if (editing) {
+        // Update existing product in state
+        setProducts(prev => prev.map(p => p.id === editing.id ? updatedProduct : p));
+      } else {
+        // Add new product to state
+        setProducts(prev => [updatedProduct, ...prev]);
+      }
+      
+      // Reset form and close modal
       setForm({ ...defaultForm, categoryId: categories[0]?.id ?? '' });
       setImageFile(null);
       imageInputRef.current && (imageInputRef.current.value = '');
@@ -153,8 +202,10 @@ export function AdminProducts() {
       setError(null);
       setFormKey((k) => k + 1);
       setModalOpen(false);
-      load();
+      
+      console.log('Product upload process completed successfully');
     } catch (err) {
+      console.error('Product upload error:', err);
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
     } finally {
@@ -166,7 +217,8 @@ export function AdminProducts() {
     if (!confirm(`Delete product "${p.name}"?`)) return;
     try {
       await deleteProduct(p.id);
-      load();
+      // Update local state instead of reloading
+      setProducts(prev => prev.filter(product => product.id !== p.id));
     } catch (err) {
       setError(String(err));
     }

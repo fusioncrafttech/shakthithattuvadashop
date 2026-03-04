@@ -125,9 +125,17 @@ export function Shop() {
 
       {/* Desktop: full product cards */}
       <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredProducts.map((product, i) => (
-          <ProductCard key={product.id} product={product} index={i} />
-        ))}
+        {filteredProducts.map((product, i) => {
+          const category = categories.find(c => c.id === product.categoryId);
+          return (
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              categorySlug={category?.slug || 'all'}
+              index={i} 
+            />
+          );
+        })}
       </div>
 
       <AnimatePresence>
@@ -135,6 +143,7 @@ export function Shop() {
           <ProductModal
             key={selectedProduct.id}
             product={selectedProduct}
+            categorySlug={categories.find(c => c.id === selectedProduct.categoryId)?.slug || 'all'}
             onClose={() => setSelectedProduct(null)}
           />
         )}
