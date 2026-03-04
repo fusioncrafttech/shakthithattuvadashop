@@ -49,7 +49,7 @@ function App() {
               <Route path="contact" element={<Contact />} />
               <Route path="history" element={<History />} />
               <Route path="90skidspecial" element={<Handcart />} />
-              <Route path="bulk-orders" element={<BulkOrders />} />
+              <Route path="bulkorders" element={<BulkOrders />} />
             </Route>
             <Route
               path="admin"
@@ -66,7 +66,7 @@ function App() {
               <Route path="gallery" element={<AdminGallery />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="users" element={<AdminUsers />} />
-              <Route path="bulk-orders" element={<AdminBulkOrders />} />
+              <Route path="bulkorders" element={<AdminBulkOrders />} />
             </Route>
           </Routes>
         </BrowserRouter>
