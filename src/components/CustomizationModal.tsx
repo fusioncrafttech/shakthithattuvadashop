@@ -47,14 +47,14 @@ export function CustomizationModal({ product, categorySlug, onClose }: Customiza
   }, [product.categoryId, shouldSkipCustomization, addItem, product, onClose]);
 
   const handleAddonToggle = (addon: CategoryAddon) => {
-    setSelectedAddons(prev => {
-      const isSelected = prev.some(a => a.id === addon.id);
-      if (isSelected) {
-        return prev.filter(a => a.id !== addon.id);
-      } else {
-        return [...prev, addon];
-      }
-    });
+    // Allow only one add-on at a time
+    // If clicking the already selected addon, deselect it
+    const isSelected = selectedAddons.some(a => a.id === addon.id);
+    if (isSelected) {
+      setSelectedAddons([]);
+    } else {
+      setSelectedAddons([addon]);
+    }
   };
 
   const calculateTotal = () => {
@@ -175,16 +175,14 @@ export function CustomizationModal({ product, categorySlug, onClose }: Customiza
                     >
                       <div className="flex items-center gap-3">
                         <div
-                          className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
+                          className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
                             isSelected
                               ? 'border-[#E53935] bg-[#E53935]'
                               : 'border-gray-300 bg-white'
                           }`}
                         >
                           {isSelected && (
-                            <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
+                            <div className="h-2 w-2 rounded-full bg-white" />
                           )}
                         </div>
                         <span className="font-medium text-gray-900">{addon.addonName}</span>
