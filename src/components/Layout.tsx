@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from './Navbar';
+import { ShopStatusIndicator } from './ShopStatusIndicator';
 import { BottomNav } from './BottomNav';
 
 export function Layout() {
@@ -20,6 +21,7 @@ export function Layout() {
   return (
     <>
       <Navbar />
+      <ShopStatusIndicator />
       <main className="min-h-screen pb-24 md:pb-12">
         <Outlet />
       </main>

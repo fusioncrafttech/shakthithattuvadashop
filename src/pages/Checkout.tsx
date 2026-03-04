@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 type Step = 1 | 2;
 
@@ -14,6 +15,8 @@ export function Checkout() {
     address: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [shopStatus, setShopStatus] = useState<{ is_open: boolean; message: string } | null>(null);
+  const [loadingShopStatus, setLoadingShopStatus] = useState(true);
   const { items, totalPrice, clearCart } = useCart();
   const { isAuthenticated, openAuthModal } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +26,34 @@ export function Checkout() {
       openAuthModal('/checkout');
     }
   }, [isAuthenticated, openAuthModal]);
+
+  useEffect(() => {
+    fetchShopStatus();
+  }, []);
+
+  const fetchShopStatus = async () => {
+    if (!supabase) {
+      setLoadingShopStatus(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.rpc('get_current_shop_status');
+      
+      if (error) {
+        console.error('Error fetching shop status:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        setShopStatus(data[0]);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoadingShopStatus(false);
+    }
+  };
 
   const validateStep1 = () => {
     const e: Record<string, string> = {};
@@ -35,13 +66,54 @@ export function Checkout() {
   };
 
   const handleNext = () => {
-    if (step === 1 && validateStep1()) setStep(2);
+    if (step === 1) {
+      // Check if shop is open before proceeding to payment
+      if (shopStatus && !shopStatus.is_open) {
+        alert(`🔴 ${shopStatus.message}\n\nOrders are not accepted when the shop is closed. Please try again when the shop is open.`);
+        return;
+      }
+      
+      if (validateStep1()) setStep(2);
+    }
   };
 
   const handlePlaceOrder = () => {
+    // Final check before placing order
+    if (shopStatus && !shopStatus.is_open) {
+      alert(`🔴 ${shopStatus.message}\n\nOrders are not accepted when the shop is closed. Please try again when the shop is open.`);
+      return;
+    }
+    
     clearCart();
     navigate('/');
   };
+
+  // Show loading state while checking shop status
+  if (loadingShopStatus) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E53935] border-t-transparent" />
+        <p className="mt-4 text-gray-600">Checking shop status...</p>
+      </div>
+    );
+  }
+
+  // Show shop closed message if shop is closed
+  if (shopStatus && !shopStatus.is_open) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
+        <div className="text-center">
+          <div className="mb-4 text-4xl">🔴</div>
+          <h2 className="mb-2 text-xl font-bold text-gray-900">Shop Currently Closed</h2>
+          <p className="mb-6 text-gray-600">{shopStatus.message}</p>
+          <p className="mb-6 text-sm text-gray-500">Orders are not accepted when the shop is closed. Please try again later.</p>
+          <Link to="/shop" className="inline-block rounded-xl bg-[#E53935] px-6 py-3 font-semibold text-white">
+            Back to Shop
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0 && step === 1) {
     return (

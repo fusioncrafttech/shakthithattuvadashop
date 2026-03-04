@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { getDashboardStats } from '../../lib/admin-data';
 import { DataTable, type Column } from '../../components/admin/DataTable';
 import { SkeletonCard } from '../../components/admin/SkeletonCard';
+import { ShopStatusControl } from '../../components/admin/ShopStatusControl';
 import type { Order } from '../../types';
 
 const container = {
@@ -125,6 +126,10 @@ export function AdminDashboard() {
           />
         </motion.div>
       </div>
+
+      <motion.div variants={item}>
+        <ShopStatusControl />
+      </motion.div>
 
       <motion.div variants={item} className="rounded-3xl border border-gray-200/80 bg-white p-6 shadow-xl">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">Sales (Last 7 days)</h2>
