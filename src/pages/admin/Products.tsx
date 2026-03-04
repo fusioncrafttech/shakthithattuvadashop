@@ -106,7 +106,7 @@ export function AdminProducts() {
       return;
     }
     setSaving(true);
-    const REQUEST_TIMEOUT_MS = 60000; // Increased to 60 seconds for better reliability
+    const REQUEST_TIMEOUT_MS = 25000;
 
     const run = async () => {
       let imageUrl = (form.image || '').trim();
