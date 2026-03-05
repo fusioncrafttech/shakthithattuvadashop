@@ -30,6 +30,7 @@ const defaultForm = {
 
 export function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -42,10 +43,22 @@ export function AdminProducts() {
   const categoryRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [formKey, setFormKey] = useState(0);
+  
+  // Filter states
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterMinPrice, setFilterMinPrice] = useState<string>('');
+  const [filterMaxPrice, setFilterMaxPrice] = useState<string>('');
+  const [filterSearch, setFilterSearch] = useState<string>('');
+  const [filterPopular, setFilterPopular] = useState<boolean>(false);
+  const [filterSpecial, setFilterSpecial] = useState<boolean>(false);
+  const [filterFeatured, setFilterFeatured] = useState<boolean>(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (categoryRef.current && !categoryRef.current.contains(e.target as Node)) setCategoryOpen(false);
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -56,6 +69,7 @@ export function AdminProducts() {
     Promise.all([fetchProducts(), fetchCategories()])
       .then(([p, c]) => {
         setProducts(p);
+        setFilteredProducts(p);
         setCategories(c);
       })
       .catch((e: unknown) => setError(String(e)))
@@ -65,6 +79,56 @@ export function AdminProducts() {
   useEffect(() => {
     load();
   }, []);
+
+  // Apply filters whenever products or filter criteria change
+  useEffect(() => {
+    let filtered = products;
+    
+    // Filter by search term (name)
+    if (filterSearch.trim()) {
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(filterSearch.toLowerCase())
+      );
+    }
+    
+    // Filter by category
+    if (filterCategory) {
+      filtered = filtered.filter(product => product.categoryId === filterCategory);
+    }
+    
+    // Filter by price range
+    if (filterMinPrice) {
+      filtered = filtered.filter(product => product.price >= Number(filterMinPrice));
+    }
+    if (filterMaxPrice) {
+      filtered = filtered.filter(product => product.price <= Number(filterMaxPrice));
+    }
+    
+    // Filter by flags
+    if (filterPopular) {
+      filtered = filtered.filter(product => product.isPopular);
+    }
+    if (filterSpecial) {
+      filtered = filtered.filter(product => product.isTodaySpecial);
+    }
+    if (filterFeatured) {
+      filtered = filtered.filter(product => product.is_featured);
+    }
+    
+    setFilteredProducts(filtered);
+  }, [products, filterCategory, filterMinPrice, filterMaxPrice, filterSearch, filterPopular, filterSpecial, filterFeatured]);
+
+  const clearFilters = () => {
+    setFilterCategory('');
+    setFilterMinPrice('');
+    setFilterMaxPrice('');
+    setFilterSearch('');
+    setFilterPopular(false);
+    setFilterSpecial(false);
+    setFilterFeatured(false);
+  };
+
+  const hasActiveFilters = filterCategory || filterMinPrice || filterMaxPrice || filterSearch || filterPopular || filterSpecial || filterFeatured;
 
   const openCreate = () => {
     setEditing(null);
@@ -281,18 +345,164 @@ export function AdminProducts() {
           <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">Products</h1>
           <p className="mt-1 text-gray-500">Manage products from database</p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 font-semibold text-white shadow-lg shadow-primary/25"
-        >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Product
-        </motion.button>
+        <div className="flex gap-3">
+          {/* Filter Button */}
+          <div ref={filterRef} className="relative">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setFilterOpen(!filterOpen)}
+              className={`inline-flex items-center gap-2 rounded-2xl px-5 py-3 font-semibold shadow-lg transition-colors ${
+                hasActiveFilters 
+                  ? 'bg-primary text-white shadow-primary/25' 
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              Filter
+              {hasActiveFilters && (
+                <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
+                  {filteredProducts.length}
+                </span>
+              )}
+            </motion.button>
+            
+            {/* Filter Dropdown */}
+            <AnimatePresence>
+              {filterOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full z-20 mt-2 w-80 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl"
+                >
+                  <div className="space-y-4">
+                    {/* Search */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">Search Products</label>
+                      <input
+                        type="text"
+                        value={filterSearch}
+                        onChange={(e) => setFilterSearch(e.target.value)}
+                        placeholder="Search by name..."
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      />
+                    </div>
+                    
+                    {/* Category Filter */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
+                      <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">All Categories</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Price Range */}
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">Price Range (₹)</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={filterMinPrice}
+                          onChange={(e) => setFilterMinPrice(e.target.value)}
+                          placeholder="Min"
+                          className="rounded-xl border border-gray-200 px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={filterMaxPrice}
+                          onChange={(e) => setFilterMaxPrice(e.target.value)}
+                          placeholder="Max"
+                          className="rounded-xl border border-gray-200 px-4 py-2.5 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Flags */}
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700">Product Flags</label>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={filterPopular}
+                            onChange={(e) => setFilterPopular(e.target.checked)}
+                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="text-sm text-gray-700">Popular Only</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={filterSpecial}
+                            onChange={(e) => setFilterSpecial(e.target.checked)}
+                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="text-sm text-gray-700">Today Special Only</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={filterFeatured}
+                            onChange={(e) => setFilterFeatured(e.target.checked)}
+                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="text-sm text-gray-700">Featured Only</span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Clear All
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFilterOpen(false)}
+                        className="flex-1 rounded-xl bg-primary px-4 py-2.5 font-semibold text-white shadow-lg"
+                      >
+                        Apply Filters
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 rounded-2xl bg-primary px-5 py-3 font-semibold text-white shadow-lg shadow-primary/25"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Product
+          </motion.button>
+        </div>
       </div>
 
       {error && (
@@ -301,14 +511,34 @@ export function AdminProducts() {
 
       {loading ? (
         <SkeletonTableRows rows={5} />
-      ) : products.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <EmptyState
-          title="No products yet"
-          description="Add products to show in your shop."
-          action={{ label: 'Add Product', onClick: openCreate }}
+          title={hasActiveFilters ? "No products match your filters" : "No products yet"}
+          description={hasActiveFilters ? "Try adjusting your filter criteria to see more products." : "Add products to show in your shop."}
+          action={!hasActiveFilters ? { label: 'Add Product', onClick: openCreate } : { label: 'Clear Filters', onClick: clearFilters }}
         />
       ) : (
-        <DataTable columns={columns} data={products} keyExtractor={(r) => r.id} />
+        <>
+          {hasActiveFilters && (
+            <div className="flex items-center justify-between rounded-2xl bg-blue-50 p-4">
+              <div className="flex items-center gap-2">
+                <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span className="text-sm font-medium text-blue-900">
+                  Showing {filteredProducts.length} of {products.length} products
+                </span>
+              </div>
+              <button
+                onClick={clearFilters}
+                className="rounded-xl bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-200"
+              >
+                Clear Filters
+              </button>
+            </div>
+          )}
+          <DataTable columns={columns} data={filteredProducts} keyExtractor={(r) => r.id} />
+        </>
       )}
 
       <ModalForm

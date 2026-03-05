@@ -3,23 +3,26 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-
-const navLinks = [
-  { to: '/', label: 'Home' },
-  { to: '/shop', label: 'Shop' },
-  { to: '/bulkorders', label: 'Bulk Orders' },
-  { to: '/about', label: 'About' },
-  { to: '/contact', label: 'Contact' },
-];
+import { useLanguage } from '../context/LanguageContext';
+import { LanguageToggle } from './LanguageToggle';
 
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { totalItems } = useCart();
   const { isAdmin, openAuthModal } = useAuth();
+  const { t } = useLanguage();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const navLinks = [
+    { to: '/', label: t('nav.home') },
+    { to: '/shop', label: t('nav.shop') },
+    { to: '/bulkorders', label: t('nav.bulkOrders') },
+    { to: '/about', label: t('nav.about') },
+    { to: '/contact', label: t('nav.contact') },
+  ];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +108,7 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* Mobile: Search only | Desktop: Cart + Profile */}
+          {/* Mobile: Search only | Desktop: Language + Cart + Profile */}
           <div className="flex w-1/3 items-center justify-end gap-2 md:w-auto md:gap-4">
             <button
               type="button"
@@ -117,6 +120,7 @@ export function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
+            <LanguageToggle />
             <Link
               to="/cart"
               className="relative hidden items-center justify-center rounded-xl bg-[#E53935] p-2.5 text-white transition-transform hover:scale-105 active:scale-95 md:flex"
@@ -139,7 +143,7 @@ export function Navbar() {
                 to="/admin"
                 className="hidden rounded-xl bg-[#E53935]/10 px-4 py-2 text-sm font-semibold text-[#E53935] transition-colors hover:bg-[#E53935]/20 md:block"
               >
-                Admin
+                {t('nav.admin')}
               </Link>
             ) : (
               <button
@@ -147,14 +151,14 @@ export function Navbar() {
                 onClick={() => openAuthModal('/admin')}
                 className="hidden rounded-xl bg-[#E53935]/10 px-4 py-2 text-sm font-semibold text-[#E53935] transition-colors hover:bg-[#E53935]/20 md:block"
               >
-                Admin
+                {t('nav.admin')}
               </button>
             )}
             <Link
               to="/profile"
               className="hidden rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-[#E53935] hover:text-[#E53935] md:block"
             >
-              Profile
+              {t('nav.profile')}
             </Link>
           </div>
         </div>
@@ -188,7 +192,7 @@ export function Navbar() {
               aria-label="Navigation menu"
             >
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-4">
-                <span className="text-sm font-semibold uppercase tracking-wider text-gray-500">Menu</span>
+                <span className="text-sm font-semibold uppercase tracking-wider text-gray-500">{t('common.menu')}</span>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
@@ -224,7 +228,7 @@ export function Navbar() {
                   onClick={() => setDrawerOpen(false)}
                   className="mx-2 flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors active:bg-gray-50"
                 >
-                  <span>Cart</span>
+                  <span>{t('nav.cart')}</span>
                   {totalItems > 0 ? (
                     <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-white">
                       {totalItems}
@@ -237,7 +241,7 @@ export function Navbar() {
                     onClick={() => setDrawerOpen(false)}
                     className="mx-2 rounded-xl px-4 py-3.5 text-base font-medium text-[#E53935] transition-colors active:bg-[#E53935]/10"
                   >
-                    Admin Panel
+                    {t('nav.adminPanel')}
                   </Link>
                 ) : (
                   <button
@@ -248,7 +252,7 @@ export function Navbar() {
                     }}
                     className="mx-2 rounded-xl px-4 py-3.5 text-base font-medium text-[#E53935] transition-colors active:bg-[#E53935]/10"
                   >
-                    Admin Panel
+                    {t('nav.adminPanel')}
                   </button>
                 )}
                 <Link
@@ -256,7 +260,7 @@ export function Navbar() {
                   onClick={() => setDrawerOpen(false)}
                   className="mx-2 rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors active:bg-gray-50"
                 >
-                  Profile
+                  {t('nav.profile')}
                 </Link>
               </nav>
             </motion.aside>
@@ -287,7 +291,7 @@ export function Navbar() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
+                  placeholder={t('nav.search')}
                   className="flex-1 rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
                   autoFocus
                 />
@@ -295,11 +299,11 @@ export function Navbar() {
                   type="submit"
                   className="rounded-xl bg-[#E53935] px-4 py-3 font-medium text-white"
                 >
-                  Search
+                  {t('common.search')}
                 </button>
               </form>
               <p className="mt-2 text-sm text-gray-500">
-                Search and filter products on the Shop page
+                {t('nav.search')}
               </p>
             </motion.div>
           </>

@@ -81,10 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(() => loadStoredUser());
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalRedirectPath, setAuthModalRedirectPath] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(() => {
-    if (!isSupabaseConfigured()) return false;
-    return !loadStoredUser();
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'admin';
@@ -102,69 +99,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = useCallback(async () => {
     const client = supabase;
     if (!client) return;
-    const { data: { user: sbUser } } = await client.auth.getUser();
-    if (!sbUser) return;
-    type ProfileRow = { id: string; email: string | null; name: string | null; role: string; phone?: string | null; address?: string | null; avatar_url?: string | null };
-    let profile: ProfileRow | null = null;
-    const { data: profileData, error: profileError } = await client
-      .from('profiles')
-      .select('id, email, name, role, phone, address, avatar_url')
-      .eq('id', sbUser.id)
-      .single();
-    if (profileError && (profileError.code === 'PGRST204' || profileError.message?.includes('column'))) {
-      const fallback = await client
-        .from('profiles')
-        .select('id, email, name, role')
-        .eq('id', sbUser.id)
-        .single();
-      profile = fallback.data as ProfileRow | null;
-    } else {
-      profile = profileData as ProfileRow | null;
-    }
-    if (!profile) {
-      await client.from('profiles').upsert(
-        {
-          id: sbUser.id,
-          email: sbUser.email ?? '',
-          name: sbUser.user_metadata?.name ?? sbUser.email?.split('@')[0] ?? '',
-          role: 'user',
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'id' }
-      );
-      const result = await client
+    
+    try {
+      const { data: { user: sbUser } } = await client.auth.getUser();
+      if (!sbUser) {
+        setUser(null);
+        saveUser(null);
+        return;
+      }
+      
+      type ProfileRow = { id: string; email: string | null; name: string | null; role: string; phone?: string | null; address?: string | null; avatar_url?: string | null };
+      let profile: ProfileRow | null = null;
+      
+      const { data: profileData, error: profileError } = await client
         .from('profiles')
         .select('id, email, name, role, phone, address, avatar_url')
         .eq('id', sbUser.id)
         .single();
-      if (result.error && (result.error.code === 'PGRST204' || result.error.message?.includes('column'))) {
-        const fallback2 = await client.from('profiles').select('id, email, name, role').eq('id', sbUser.id).single();
-        profile = fallback2.data as ProfileRow | null;
+        
+      if (profileError && (profileError.code === 'PGRST204' || profileError.message?.includes('column'))) {
+        const fallback = await client
+          .from('profiles')
+          .select('id, email, name, role')
+          .eq('id', sbUser.id)
+          .single();
+        profile = fallback.data as ProfileRow | null;
       } else {
-        profile = result.data as ProfileRow | null;
+        profile = profileData as ProfileRow | null;
       }
-    }
-    if (profile) {
-      const authUser: AuthUser = {
-        id: profile.id,
-        email: profile.email ?? sbUser.email ?? '',
-        name: profile.name ?? sbUser.user_metadata?.name ?? '',
-        role: (profile.role as UserRole) ?? 'user',
-        phone: profile.phone ?? undefined,
-        address: profile.address ?? undefined,
-        avatar_url: profile.avatar_url ?? undefined,
-      };
-      setUser(authUser);
-      saveUser(authUser);
-    } else {
-      const fallbackUser: AuthUser = {
-        id: sbUser.id,
-        email: sbUser.email ?? '',
-        name: sbUser.user_metadata?.name ?? sbUser.email?.split('@')[0] ?? '',
-        role: 'user',
-      };
-      setUser(fallbackUser);
-      saveUser(fallbackUser);
+      
+      if (!profile) {
+        await client.from('profiles').upsert(
+          {
+            id: sbUser.id,
+            email: sbUser.email ?? '',
+            name: sbUser.user_metadata?.name ?? sbUser.email?.split('@')[0] ?? '',
+            role: 'user',
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+        const result = await client
+          .from('profiles')
+          .select('id, email, name, role, phone, address, avatar_url')
+          .eq('id', sbUser.id)
+          .single();
+        if (result.error && (result.error.code === 'PGRST204' || result.error.message?.includes('column'))) {
+          const fallback2 = await client.from('profiles').select('id, email, name, role').eq('id', sbUser.id).single();
+          profile = fallback2.data as ProfileRow | null;
+        } else {
+          profile = result.data as ProfileRow | null;
+        }
+      }
+      
+      if (profile) {
+        const authUser: AuthUser = {
+          id: profile.id,
+          email: profile.email ?? sbUser.email ?? '',
+          name: profile.name ?? sbUser.user_metadata?.name ?? '',
+          role: (profile.role as UserRole) ?? 'user',
+          phone: profile.phone ?? undefined,
+          address: profile.address ?? undefined,
+          avatar_url: profile.avatar_url ?? undefined,
+        };
+        setUser(authUser);
+        saveUser(authUser);
+      }
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
     }
   }, []);
 
@@ -176,25 +178,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const init = async () => {
-      const { data: { session } } = await client.auth.getSession();
-      if (session?.user) {
-        await refreshProfile();
-      } else {
-        setUser(null);
-        saveUser(null);
+      try {
+        // First check localStorage for cached user
+        const storedUser = loadStoredUser();
+        if (storedUser) {
+          console.log('Found stored user:', storedUser.email, 'Role:', storedUser.role);
+          setUser(storedUser);
+        }
+
+        // Then verify with Supabase session
+        const { data: { session } } = await client.auth.getSession();
+        if (session?.user) {
+          console.log('Supabase session found, refreshing profile');
+          await refreshProfile();
+        } else if (storedUser) {
+          // If no session but we have stored user, keep the stored user
+          // Don't automatically logout - let the user stay logged in with cached data
+          console.log('No Supabase session, using cached user session');
+        } else {
+          console.log('No stored user or Supabase session found');
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        // Don't clear user on error, keep cached session if available
+        const storedUser = loadStoredUser();
+        if (storedUser) {
+          console.log('Error occurred, using cached user');
+          setUser(storedUser);
+        }
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
+    
     init();
 
     const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
+        // Only clear user if explicitly signed out
         setUser(null);
         saveUser(null);
         return;
       }
-      if (session?.user) await refreshProfile();
+      if (event === 'SIGNED_IN' && session?.user) {
+        await refreshProfile();
+      }
+      // For other events (TOKEN_REFRESHED, etc.), don't disturb the session
     });
+    
     return () => subscription.unsubscribe();
   }, [refreshProfile]);
 

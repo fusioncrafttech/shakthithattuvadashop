@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Navbar } from './Navbar';
 import { ShopStatusIndicator } from './ShopStatusIndicator';
 import { BottomNav } from './BottomNav';
+import { AuthModal } from './AuthModal';
 
 export function Layout() {
   const location = useLocation();
@@ -26,6 +27,7 @@ export function Layout() {
         <Outlet />
       </main>
       <BottomNav />
+      <AuthModal />
     </>
   );
 }

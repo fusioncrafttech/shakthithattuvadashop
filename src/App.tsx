@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Layout } from './components/Layout';
 import { LoadingScreen } from './components/LoadingScreen';
 import { Home } from './pages/Home';
@@ -34,44 +35,46 @@ function App() {
   }, []);
 
   return (
-    <AuthProvider>
-      <CartProvider>
-        <LoadingScreen isLoading={loading} />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Home />} />
-              <Route path="shop" element={<Shop />} />
-              <Route path="cart" element={<Cart />} />
-              <Route path="checkout" element={<Checkout />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="about" element={<About />} />
-              <Route path="contact" element={<Contact />} />
-              <Route path="history" element={<History />} />
-              <Route path="90skidspecial" element={<Handcart />} />
-              <Route path="bulkorders" element={<BulkOrders />} />
-            </Route>
-            <Route
-              path="admin"
-              element={
-                <AdminGuard>
-                  <AdminLayout />
-                </AdminGuard>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<AdminProducts />} />
-              <Route path="categories" element={<AdminCategories />} />
-              <Route path="banners" element={<AdminBanners />} />
-              <Route path="gallery" element={<AdminGallery />} />
-              <Route path="orders" element={<AdminOrders />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="bulkorders" element={<AdminBulkOrders />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
-      </CartProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <CartProvider>
+          <LoadingScreen isLoading={loading} />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Home />} />
+                <Route path="shop" element={<Shop />} />
+                <Route path="cart" element={<Cart />} />
+                <Route path="checkout" element={<Checkout />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="about" element={<About />} />
+                <Route path="contact" element={<Contact />} />
+                <Route path="history" element={<History />} />
+                <Route path="90skidspecial" element={<Handcart />} />
+                <Route path="bulkorders" element={<BulkOrders />} />
+              </Route>
+              <Route
+                path="admin"
+                element={
+                  <AdminGuard>
+                    <AdminLayout />
+                  </AdminGuard>
+                }
+              >
+                <Route index element={<AdminDashboard />} />
+                <Route path="products" element={<AdminProducts />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="banners" element={<AdminBanners />} />
+                <Route path="gallery" element={<AdminGallery />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="bulkorders" element={<AdminBulkOrders />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </CartProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

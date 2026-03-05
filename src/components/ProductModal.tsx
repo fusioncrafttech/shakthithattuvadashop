@@ -1,47 +1,29 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { CustomizationModal } from './CustomizationModal';
+import { useLanguage } from '../context/LanguageContext';
 import type { Product } from '../types';
 
 interface ProductModalProps {
   product: Product;
-  categorySlug: string;
   onClose: () => void;
 }
 
-export function ProductModal({ product, categorySlug, onClose }: ProductModalProps) {
-  const [showCustomization, setShowCustomization] = useState(false);
+export function ProductModal({ product, onClose }: ProductModalProps) {
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
+  const { t, translateProduct } = useLanguage();
+  
+  const translatedProduct = translateProduct(product);
 
   const handleAddToCart = () => {
-    // Skip customization for 90's Kid Special and Bun Varieties
-    if (categorySlug === '90s-kid-special' || categorySlug === 'bun') {
-      // Add directly to cart
-      addItem(product);
-      setAdded(true);
-      setTimeout(() => {
-        onClose();
-      }, 1000);
-      return;
-    }
-    
-    setShowCustomization(true);
+    addItem(translatedProduct);
+    setAdded(true);
+    setTimeout(() => {
+      onClose();
+    }, 1000);
   };
 
-  if (showCustomization) {
-    return (
-      <CustomizationModal
-        product={product}
-        categorySlug={categorySlug}
-        onClose={() => {
-          setShowCustomization(false);
-          if (added) onClose();
-        }}
-      />
-    );
-  }
 
   return (
     <motion.div
@@ -63,7 +45,7 @@ export function ProductModal({ product, categorySlug, onClose }: ProductModalPro
         <div className="relative h-[28vh] min-h-[160px] shrink-0 overflow-hidden bg-gray-100 sm:aspect-4/3 sm:h-auto">
           <img
             src={product.image}
-            alt={product.name}
+            alt={translatedProduct.name}
             className="h-full w-full object-cover"
           />
           <button
@@ -83,10 +65,10 @@ export function ProductModal({ product, categorySlug, onClose }: ProductModalPro
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <h2 className="text-xl font-bold leading-tight text-gray-900 sm:text-2xl">
-            {product.name}
+            {translatedProduct.name}
           </h2>
           <p className="mt-2 text-sm leading-snug text-gray-600 sm:text-base">
-            {product.description}
+            {translatedProduct.description}
           </p>
           <p className="mt-3 text-lg font-bold text-[#E53935] sm:text-xl">
             ₹{product.price}
@@ -98,8 +80,7 @@ export function ProductModal({ product, categorySlug, onClose }: ProductModalPro
               className="w-full rounded-xl bg-[#E53935] py-3.5 font-semibold text-white transition-colors hover:bg-[#C62828] active:bg-[#B71C1C] touch-manipulation sm:py-4"
               whileTap={{ scale: 0.98 }}
             >
-              {added ? 'Added to cart ✓' : 
-               (categorySlug === '90s-kid-special' || categorySlug === 'bun') ? 'Add to Cart' : 'Customize & Add to Cart'}
+              {added ? 'Added to cart ✓' : t('shop.addToCart')}
             </motion.button>
             {added && (
               <motion.p

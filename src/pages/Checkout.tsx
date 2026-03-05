@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
+import { useLanguage } from '../context/LanguageContext';
 
 type Step = 1 | 2;
 
@@ -15,45 +15,17 @@ export function Checkout() {
     address: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [shopStatus, setShopStatus] = useState<{ is_open: boolean; message: string } | null>(null);
-  const [loadingShopStatus, setLoadingShopStatus] = useState(true);
+  const [showQRScanner, setShowQRScanner] = useState(false);
   const { items, totalPrice, clearCart } = useCart();
-  const { isAuthenticated, openAuthModal } = useAuth();
+  const { isAuthenticated, openAuthModal, isLoading } = useAuth();
+  const { t, translateProduct } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && !isLoading) {
       openAuthModal('/checkout');
     }
-  }, [isAuthenticated, openAuthModal]);
-
-  useEffect(() => {
-    fetchShopStatus();
-  }, []);
-
-  const fetchShopStatus = async () => {
-    if (!supabase) {
-      setLoadingShopStatus(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.rpc('get_current_shop_status');
-      
-      if (error) {
-        console.error('Error fetching shop status:', error);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        setShopStatus(data[0]);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoadingShopStatus(false);
-    }
-  };
+  }, [isAuthenticated, isLoading, openAuthModal]);
 
   const validateStep1 = () => {
     const e: Record<string, string> = {};
@@ -67,53 +39,52 @@ export function Checkout() {
 
   const handleNext = () => {
     if (step === 1) {
-      // Check if shop is open before proceeding to payment
-      if (shopStatus && !shopStatus.is_open) {
-        alert(`🔴 ${shopStatus.message}\n\nOrders are not accepted when the shop is closed. Please try again when the shop is open.`);
-        return;
-      }
-      
       if (validateStep1()) setStep(2);
     }
   };
 
   const handlePlaceOrder = () => {
-    // Final check before placing order
-    if (shopStatus && !shopStatus.is_open) {
-      alert(`🔴 ${shopStatus.message}\n\nOrders are not accepted when the shop is closed. Please try again when the shop is open.`);
-      return;
-    }
-    
     clearCart();
     navigate('/');
   };
 
-  // Show loading state while checking shop status
-  if (loadingShopStatus) {
-    return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#E53935] border-t-transparent" />
-        <p className="mt-4 text-gray-600">Checking shop status...</p>
-      </div>
-    );
-  }
-
-  // Show shop closed message if shop is closed
-  if (shopStatus && !shopStatus.is_open) {
-    return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center px-4">
-        <div className="text-center">
-          <div className="mb-4 text-4xl">🔴</div>
-          <h2 className="mb-2 text-xl font-bold text-gray-900">Shop Currently Closed</h2>
-          <p className="mb-6 text-gray-600">{shopStatus.message}</p>
-          <p className="mb-6 text-sm text-gray-500">Orders are not accepted when the shop is closed. Please try again later.</p>
-          <Link to="/shop" className="inline-block rounded-xl bg-[#E53935] px-6 py-3 font-semibold text-white">
-            Back to Shop
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const handleUPIPayment = () => {
+    // Generate UPI payment URL with amount
+    const upiUrl = `upi://pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment`;
+    
+    // Try to open specific UPI apps in order of preference
+    const upiApps = [
+      { name: 'GPay', url: `gpay://upi/pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
+      { name: 'PhonePe', url: `phonepe://upi/pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
+      { name: 'Paytm', url: `paytmmp://upi/pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
+      { name: 'Generic UPI', url: upiUrl }
+    ];
+    
+    // Try each UPI app
+    let appOpened = false;
+    for (const app of upiApps) {
+      try {
+        window.location.href = app.url;
+        appOpened = true;
+        break;
+      } catch (error) {
+        console.log(`Failed to open ${app.name}:`, error);
+        continue;
+      }
+    }
+    
+    // Fallback: show QR code scanner if no app opened
+    if (!appOpened) {
+      setTimeout(() => {
+        setShowQRScanner(true);
+      }, 1000);
+    } else {
+      // Also show QR scanner as backup after a delay
+      setTimeout(() => {
+        setShowQRScanner(true);
+      }, 3000);
+    }
+  };
 
   if (items.length === 0 && step === 1) {
     return (
@@ -148,37 +119,37 @@ export function Checkout() {
             exit={{ opacity: 0, x: 20 }}
             className="space-y-6"
           >
-            <h2 className="text-xl font-bold text-gray-900">Delivery Details</h2>
+            <h2 className="text-xl font-bold text-gray-900">{t('checkout.deliveryDetails')}</h2>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('checkout.name')}</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
-                placeholder="Your name"
+                placeholder={t('checkout.namePlaceholder')}
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Mobile Number</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('checkout.mobile')}</label>
               <input
                 type="tel"
                 value={form.mobile}
                 onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
-                placeholder="10-digit mobile number"
+                placeholder={t('checkout.mobilePlaceholder')}
               />
               {errors.mobile && <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Delivery Address</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('checkout.address')}</label>
               <textarea
                 value={form.address}
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
                 rows={3}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
-                placeholder="Full address for delivery"
+                placeholder={t('checkout.addressPlaceholder')}
               />
               {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
             </div>
@@ -186,7 +157,7 @@ export function Checkout() {
               onClick={handleNext}
               className="w-full rounded-xl bg-[#E53935] py-3.5 font-semibold text-white"
             >
-              Continue to Payment
+              {t('checkout.continueToPayment')}
             </button>
           </motion.div>
         )}
@@ -201,12 +172,15 @@ export function Checkout() {
           >
             <h2 className="text-xl font-bold text-gray-900">Order Summary</h2>
             <div className="rounded-2xl bg-white p-5 shadow-lg">
-              {items.map(({ product, quantity }) => (
-                <div key={product.id} className="flex justify-between py-2">
-                  <span className="text-gray-700">{product.name} × {quantity}</span>
-                  <span>₹{product.price * quantity}</span>
-                </div>
-              ))}
+              {items.map(({ product, quantity }) => {
+                const translatedProduct = translateProduct(product);
+                return (
+                  <div key={product.id} className="flex justify-between py-2">
+                    <span className="text-gray-700">{translatedProduct.name} × {quantity}</span>
+                    <span>₹{product.price * quantity}</span>
+                  </div>
+                );
+              })}
               <div className="mt-4 border-t border-gray-200 pt-4 font-semibold">
                 <div className="flex justify-between">
                   <span>Total</span>
@@ -217,26 +191,19 @@ export function Checkout() {
 
             <h3 className="font-semibold text-gray-900">Payment</h3>
             <div className="grid gap-3">
-              <div className="flex items-center gap-4 rounded-xl border-2 border-[#E53935] bg-[#FFF8E1] p-4">
+              <button
+                type="button"
+                onClick={handleUPIPayment}
+                className="flex items-center gap-4 rounded-xl border-2 border-[#E53935] bg-[#FFF8E1] p-4 hover:bg-[#FFF8E1]/80 transition-colors"
+              >
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow">
                   <span className="text-lg font-bold">UPI</span>
                 </div>
-                <div>
-                  <p className="font-medium">UPI</p>
-                  <p className="text-sm text-gray-500">GPay, PhonePe, Paytm</p>
+                <div className="text-left">
+                  <p className="font-medium">UPI Payment</p>
+                  <p className="text-sm text-gray-500">GPay, PhonePe, Paytm - Click to scan QR</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-4 rounded-xl border border-gray-200 p-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100">
-                  <svg className="h-6 w-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-medium">Card</p>
-                  <p className="text-sm text-gray-500">Credit / Debit Card</p>
-                </div>
-              </div>
+              </button>
             </div>
 
             <div className="flex gap-3">
@@ -256,6 +223,69 @@ export function Checkout() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* QR Scanner Modal */}
+      {showQRScanner && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Scan QR Code</h3>
+              <button
+                onClick={() => setShowQRScanner(false)}
+                className="rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4 text-center">
+              <div className="mx-auto mb-4 h-48 w-48 rounded-lg bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                  <svg className="mx-auto h-16 w-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                  </svg>
+                  <p className="text-sm text-gray-600">QR Code Scanner</p>
+                  <p className="text-xs text-gray-500 mt-1">Open GPay/PhonePe to scan</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="rounded-lg bg-gray-50 p-3">
+                <p className="text-sm font-medium text-gray-900">Payment Amount:</p>
+                <p className="text-xl font-bold text-[#E53935]">₹{totalPrice}</p>
+              </div>
+              
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-2">Open GPay or PhonePe and scan QR</p>
+                <div className="flex justify-center gap-2 mb-2">
+                  <div className="rounded-lg bg-green-50 px-3 py-1">
+                    <span className="text-xs font-medium text-green-700">GPay</span>
+                  </div>
+                  <div className="rounded-lg bg-purple-50 px-3 py-1">
+                    <span className="text-xs font-medium text-purple-700">PhonePe</span>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-gray-100 p-2">
+                  <p className="text-xs font-mono text-gray-700">shakthithattuvada@ybl</p>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => {
+                  setShowQRScanner(false);
+                  handlePlaceOrder();
+                }}
+                className="w-full rounded-xl bg-[#E53935] py-3 font-semibold text-white"
+              >
+                I've Paid
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

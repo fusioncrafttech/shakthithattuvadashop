@@ -6,12 +6,14 @@ import { ProductCard } from '../components/ProductCard';
 import { offerBanners } from '../data/offers';
 import { fetchProducts, fetchCategories } from '../lib/admin-data';
 import type { Product, Category } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 
 export function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     Promise.all([fetchProducts(), fetchCategories()])
@@ -48,7 +50,7 @@ export function Home() {
 
       {/* 2. Categories Horizontal Scroll - from database */}
       <section className="mb-10 md:mb-20">
-        <h2 className="mb-6 text-xl font-bold text-gray-900 md:text-2xl">Categories</h2>
+        <h2 className="mb-6 text-xl font-bold text-gray-900 md:text-2xl">{t('home.categories')}</h2>
         {loading ? (
           <div className="flex gap-4 overflow-hidden">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -62,7 +64,7 @@ export function Home() {
 
       {/* 3. Popular Items */}
       <section className="mb-10 md:mb-20">
-        <h2 className="mb-6 text-xl font-bold text-gray-900 md:text-2xl">Popular Items</h2>
+        <h2 className="mb-6 text-xl font-bold text-gray-900 md:text-2xl">{t('home.popularItems')}</h2>
         {loading ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
@@ -85,7 +87,7 @@ export function Home() {
 
       {/* 4. Today Specials */}
       <section className="mb-10 md:mb-20">
-        <h2 className="mb-6 text-xl font-bold text-gray-900 md:text-2xl">Today Specials</h2>
+        <h2 className="mb-6 text-xl font-bold text-gray-900 md:text-2xl">{t('home.todaySpecials')}</h2>
         {loading ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (

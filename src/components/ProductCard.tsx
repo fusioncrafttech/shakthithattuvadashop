@@ -1,40 +1,34 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { CustomizationModal } from './CustomizationModal';
+import { useLanguage } from '../context/LanguageContext';
 import type { Product } from '../types';
 
 interface ProductCardProps {
   product: Product;
-  categorySlug: string;
   showBadge?: 'popular' | 'special' | false;
   index?: number;
 }
 
-export function ProductCard({ product, categorySlug, showBadge = false, index = 0 }: ProductCardProps) {
-  const [showCustomization, setShowCustomization] = useState(false);
+export function ProductCard({ product, showBadge = false, index = 0 }: ProductCardProps) {
   const { addItem } = useCart();
+  const { t, translateProduct } = useLanguage();
+  
+  const translatedProduct = translateProduct(product);
 
   const badge =
     showBadge === 'popular'
-      ? { label: 'Popular', className: 'bg-[#E53935] text-white' }
+      ? { label: t('shop.popular'), className: 'bg-[#E53935] text-white' }
       : showBadge === 'special'
-        ? { label: 'Today Special', className: 'bg-[#FFD54F] text-[#C62828]' }
+        ? { label: t('shop.special'), className: 'bg-[#FFD54F] text-[#C62828]' }
         : null;
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Skip customization for 90's Kid Special and Bun Varieties
-    if (categorySlug === '90s-kid-special' || categorySlug === 'bun') {
-      // Add directly to cart
-      addItem(product);
-      return;
-    }
-    
-    setShowCustomization(true);
+    // Add translated product to cart
+    addItem(translatedProduct);
   };
 
   return (
@@ -50,7 +44,7 @@ export function ProductCard({ product, categorySlug, showBadge = false, index = 
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
               src={product.image}
-              alt={product.name}
+              alt={translatedProduct.name}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             {badge && (
@@ -62,8 +56,8 @@ export function ProductCard({ product, categorySlug, showBadge = false, index = 
             )}
           </div>
           <div className="flex flex-1 flex-col p-4 md:p-5">
-            <h3 className="font-semibold text-gray-900 md:text-lg">{product.name}</h3>
-            <p className="mt-0.5 line-clamp-2 text-sm text-gray-500">{product.description}</p>
+            <h3 className="font-semibold text-gray-900 md:text-lg">{translatedProduct.name}</h3>
+            <p className="mt-0.5 line-clamp-2 text-sm text-gray-500">{translatedProduct.description}</p>
             <p className="mt-2 text-lg font-bold text-[#E53935]">₹{product.price}</p>
           </div>
         </Link>
@@ -73,18 +67,11 @@ export function ProductCard({ product, categorySlug, showBadge = false, index = 
             className="w-full rounded-xl bg-[#E53935] py-3 font-semibold text-white transition-colors hover:bg-[#C62828]"
             whileTap={{ scale: 0.98 }}
           >
-            Add to Cart
+            {t('shop.addToCart')}
           </motion.button>
         </div>
       </motion.article>
 
-      {showCustomization && (
-        <CustomizationModal
-          product={product}
-          categorySlug={categorySlug}
-          onClose={() => setShowCustomization(false)}
-        />
-      )}
     </>
   );
 }
