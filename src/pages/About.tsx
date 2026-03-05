@@ -15,12 +15,6 @@ For more than two decades, we have built strong customer trust by providing cons
 
 We are committed to preserving traditional snack culture while providing a fast, clean, and satisfying food experience for every customer who visits us.`;
 
-const promises = [
-  { title: 'Fresh Daily', desc: 'Prepared fresh every morning, no leftover batches.' },
-  { title: 'No Compromise', desc: 'Traditional recipes, no shortcuts on taste.' },
-  { title: 'Hygiene First', desc: 'Clean kitchen, safe packaging, contactless delivery.' },
-];
-
 function isYouTubeOrVimeo(url: string): boolean {
   return /youtube\.com|youtu\.be|vimeo\.com/i.test(url || '');
 }
@@ -54,6 +48,12 @@ function getEmbedUrl(url: string): string {
 
 export function About() {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
+
+  const promises = [
+    { title: 'Fresh Daily', desc: 'Prepared fresh every morning, no leftover batches.' },
+    { title: 'No Compromise', desc: 'Traditional recipes, no shortcuts on taste.' },
+    { title: 'Hygiene First', desc: 'Clean kitchen, safe packaging, contactless delivery.' },
+  ];
 
   useEffect(() => {
     fetchGallery().then(setGallery).catch(() => setGallery([]));

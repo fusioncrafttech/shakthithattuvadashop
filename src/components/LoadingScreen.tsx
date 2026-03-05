@@ -15,12 +15,16 @@ export function LoadingScreen({ isLoading }: LoadingScreenProps) {
           transition={{ duration: 0.4 }}
         >
           <motion.div
-            className="mb-8 text-2xl font-bold tracking-tight text-[#E53935] md:text-3xl"
+            className="mb-8"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            Shakthi Thattuvadaset Corner
+            <img 
+              src="/ST_Shop.png" 
+              alt="Shakthi Thattuvadaset Corner" 
+              className="w-124 h-124 md:w-md md:h-md lg:w-lg lg:h-lg object-contain"
+            />
           </motion.div>
           <motion.div
             className="h-1 w-24 overflow-hidden rounded-full bg-[#FFD54F]"

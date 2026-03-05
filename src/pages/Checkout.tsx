@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
+
 
 type Step = 1 | 2;
 
@@ -18,7 +18,6 @@ export function Checkout() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const { items, totalPrice, clearCart } = useCart();
   const { isAuthenticated, openAuthModal, isLoading } = useAuth();
-  const { t, translateProduct } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -119,37 +118,37 @@ export function Checkout() {
             exit={{ opacity: 0, x: 20 }}
             className="space-y-6"
           >
-            <h2 className="text-xl font-bold text-gray-900">{t('checkout.deliveryDetails')}</h2>
+            <h2 className="text-xl font-bold text-gray-900">Delivery Details</h2>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">{t('checkout.name')}</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Name</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
-                placeholder={t('checkout.namePlaceholder')}
+                placeholder="Enter your name"
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">{t('checkout.mobile')}</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Mobile</label>
               <input
                 type="tel"
                 value={form.mobile}
                 onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value }))}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
-                placeholder={t('checkout.mobilePlaceholder')}
+                placeholder="Enter your mobile number"
               />
               {errors.mobile && <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">{t('checkout.address')}</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Address</label>
               <textarea
                 value={form.address}
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
                 rows={3}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
-                placeholder={t('checkout.addressPlaceholder')}
+                placeholder="Enter your delivery address"
               />
               {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
             </div>
@@ -157,7 +156,7 @@ export function Checkout() {
               onClick={handleNext}
               className="w-full rounded-xl bg-[#E53935] py-3.5 font-semibold text-white"
             >
-              {t('checkout.continueToPayment')}
+              Continue to Payment
             </button>
           </motion.div>
         )}
@@ -172,15 +171,12 @@ export function Checkout() {
           >
             <h2 className="text-xl font-bold text-gray-900">Order Summary</h2>
             <div className="rounded-2xl bg-white p-5 shadow-lg">
-              {items.map(({ product, quantity }) => {
-                const translatedProduct = translateProduct(product);
-                return (
-                  <div key={product.id} className="flex justify-between py-2">
-                    <span className="text-gray-700">{translatedProduct.name} × {quantity}</span>
-                    <span>₹{product.price * quantity}</span>
-                  </div>
-                );
-              })}
+              {items.map(({ product, quantity }) => (
+                <div key={product.id} className="flex justify-between py-2">
+                  <span className="text-gray-700">{product.name} × {quantity}</span>
+                  <span>₹{product.price * quantity}</span>
+                </div>
+              ))}
               <div className="mt-4 border-t border-gray-200 pt-4 font-semibold">
                 <div className="flex justify-between">
                   <span>Total</span>

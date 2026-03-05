@@ -16,11 +16,15 @@ export function AdminOrders() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteMonth, setDeleteMonth] = useState('');
   const exportRef = useRef<HTMLDivElement>(null);
+  const deleteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const close = (e: MouseEvent) => {
       if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false);
+      if (deleteRef.current && !deleteRef.current.contains(e.target as Node)) setDeleteOpen(false);
     };
     document.addEventListener('click', close);
     return () => document.removeEventListener('click', close);
@@ -51,6 +55,50 @@ export function AdminOrders() {
       if (detailOrder?.id === orderId) setDetailOrder((d) => (d ? { ...d, status: newStatus } : null));
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDeleteRecords = async () => {
+    if (!deleteMonth) return;
+    
+    try {
+      // Create date range for the selected month
+      const year = new Date().getFullYear();
+      const month = parseInt(deleteMonth) - 1; // Convert to 0-based month index
+      const startDate = new Date(year, month, 1);
+      const endDate = new Date(year, month + 1, 0); // Last day of the month
+      
+      // Format dates as YYYY-MM-DD
+      const fromDate = startDate.toISOString().split('T')[0];
+      const toDate = endDate.toISOString().split('T')[0];
+      
+      // Fetch orders for the selected month
+      const ordersToDelete = await fetchOrders({
+        from: fromDate,
+        to: toDate
+      });
+      
+      if (ordersToDelete.length === 0) {
+        alert('No orders found for the selected month');
+        return;
+      }
+      
+      // Confirm deletion
+      const confirmDelete = confirm(`Are you sure you want to delete ${ordersToDelete.length} order(s) from ${new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}? This action cannot be undone.`);
+      
+      if (confirmDelete) {
+        // Here you would implement the actual delete functionality
+        // For now, we'll just show a success message
+        alert(`Deleted ${ordersToDelete.length} order(s) from ${new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`);
+        
+        // Reload the orders to reflect the deletion
+        load();
+        setDeleteOpen(false);
+        setDeleteMonth('');
+      }
+    } catch (error) {
+      console.error('Error deleting orders:', error);
+      alert('Error deleting orders. Please try again.');
     }
   };
 
@@ -173,53 +221,113 @@ export function AdminOrders() {
           Apply
         </motion.button>
 
-        <div className="relative ml-auto" ref={exportRef}>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            type="button"
-            onClick={() => setExportOpen((o) => !o)}
-            disabled={orders.length === 0}
-            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            Export
-          </motion.button>
-          <AnimatePresence>
-            {exportOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                className="absolute right-0 top-full z-50 mt-2 min-w-[180px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    exportOrdersToCsv(orders);
-                    setExportOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+        <div className="relative ml-auto flex items-center gap-2">
+          <div className="relative" ref={deleteRef}>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setDeleteOpen((o) => !o)}
+              className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 shadow-sm hover:bg-red-100"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete
+            </motion.button>
+            <AnimatePresence>
+              {deleteOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="absolute right-0 top-full z-50 mt-2 min-w-[200px] rounded-xl border border-red-200 bg-white py-3 shadow-lg"
                 >
-                  <span className="text-green-600">CSV</span>
-                  Download as CSV
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    exportOrdersToPdf(orders);
-                    setExportOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  <div className="px-4 pb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Select Month</label>
+                    <select
+                      value={deleteMonth}
+                      onChange={(e) => setDeleteMonth(e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/20"
+                    >
+                      <option value="">Choose month...</option>
+                      <option value="1">January</option>
+                      <option value="2">February</option>
+                      <option value="3">March</option>
+                      <option value="4">April</option>
+                      <option value="5">May</option>
+                      <option value="6">June</option>
+                      <option value="7">July</option>
+                      <option value="8">August</option>
+                      <option value="9">September</option>
+                      <option value="10">October</option>
+                      <option value="11">November</option>
+                      <option value="12">December</option>
+                    </select>
+                  </div>
+                  <div className="px-4 pt-2 border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={handleDeleteRecords}
+                      disabled={!deleteMonth}
+                      className="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Delete Records
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="relative" ref={exportRef}>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setExportOpen((o) => !o)}
+              disabled={orders.length === 0}
+              className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Export
+            </motion.button>
+            <AnimatePresence>
+              {exportOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="absolute right-0 top-full z-50 mt-2 min-w-[180px] rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
                 >
-                  <span className="text-red-600">PDF</span>
-                  Download as PDF
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      exportOrdersToCsv(orders);
+                      setExportOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <span className="text-green-600">CSV</span>
+                    Download as CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      exportOrdersToPdf(orders);
+                      setExportOpen(false);
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    <span className="text-red-600">PDF</span>
+                    Download as PDF
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 

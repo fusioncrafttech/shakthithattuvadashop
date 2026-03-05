@@ -3,26 +3,23 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
-import { LanguageToggle } from './LanguageToggle';
+
+const navLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/shop', label: 'Shop' },
+  { to: '/bulkorders', label: 'Bulk Orders' },
+  { to: '/about', label: 'About' },
+  { to: '/contact', label: 'Contact' },
+];
 
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { totalItems } = useCart();
   const { isAdmin, openAuthModal } = useAuth();
-  const { t } = useLanguage();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const navLinks = [
-    { to: '/', label: t('nav.home') },
-    { to: '/shop', label: t('nav.shop') },
-    { to: '/bulkorders', label: t('nav.bulkOrders') },
-    { to: '/about', label: t('nav.about') },
-    { to: '/contact', label: t('nav.contact') },
-  ];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,18 +66,22 @@ export function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <Link to="/" className="hidden md:block">
-              <span className="text-xl font-bold tracking-tight text-[#E53935] md:text-2xl">
-                Shakthi Thattuvadaset
-              </span>
+            <Link to="/" className="hidden md:flex items-center">
+              <img 
+                src="/Navbar logo.png" 
+                alt="Shakthi Thattuvadaset" 
+                className="h-24 w-auto md:h-35"
+              />
             </Link>
           </div>
 
-          {/* Mobile: Center brand name */}
+          {/* Mobile: Center brand logo */}
           <Link to="/" className="flex flex-1 justify-center md:hidden">
-            <span className="text-center text-lg font-bold tracking-tight text-[#E53935]">
-              Shakthi Thattuvadaset
-            </span>
+            <img 
+              src="/Navbar logo.png" 
+              alt="Shakthi Thattuvadaset" 
+              className="h-24 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop nav */}
@@ -120,7 +121,6 @@ export function Navbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
-            <LanguageToggle />
             <Link
               to="/cart"
               className="relative hidden items-center justify-center rounded-xl bg-[#E53935] p-2.5 text-white transition-transform hover:scale-105 active:scale-95 md:flex"
@@ -143,7 +143,7 @@ export function Navbar() {
                 to="/admin"
                 className="hidden rounded-xl bg-[#E53935]/10 px-4 py-2 text-sm font-semibold text-[#E53935] transition-colors hover:bg-[#E53935]/20 md:block"
               >
-                {t('nav.admin')}
+                Admin
               </Link>
             ) : (
               <button
@@ -151,14 +151,14 @@ export function Navbar() {
                 onClick={() => openAuthModal('/admin')}
                 className="hidden rounded-xl bg-[#E53935]/10 px-4 py-2 text-sm font-semibold text-[#E53935] transition-colors hover:bg-[#E53935]/20 md:block"
               >
-                {t('nav.admin')}
+                Admin
               </button>
             )}
             <Link
               to="/profile"
               className="hidden rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-[#E53935] hover:text-[#E53935] md:block"
             >
-              {t('nav.profile')}
+              Profile
             </Link>
           </div>
         </div>
@@ -192,7 +192,7 @@ export function Navbar() {
               aria-label="Navigation menu"
             >
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-4">
-                <span className="text-sm font-semibold uppercase tracking-wider text-gray-500">{t('common.menu')}</span>
+                <span className="text-sm font-semibold uppercase tracking-wider text-gray-500">{('common.menu')}</span>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
@@ -228,7 +228,7 @@ export function Navbar() {
                   onClick={() => setDrawerOpen(false)}
                   className="mx-2 flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors active:bg-gray-50"
                 >
-                  <span>{t('nav.cart')}</span>
+                  <span>Cart</span>
                   {totalItems > 0 ? (
                     <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-white">
                       {totalItems}
@@ -241,7 +241,7 @@ export function Navbar() {
                     onClick={() => setDrawerOpen(false)}
                     className="mx-2 rounded-xl px-4 py-3.5 text-base font-medium text-[#E53935] transition-colors active:bg-[#E53935]/10"
                   >
-                    {t('nav.adminPanel')}
+                    Admin Panel
                   </Link>
                 ) : (
                   <button
@@ -252,7 +252,7 @@ export function Navbar() {
                     }}
                     className="mx-2 rounded-xl px-4 py-3.5 text-base font-medium text-[#E53935] transition-colors active:bg-[#E53935]/10"
                   >
-                    {t('nav.adminPanel')}
+                    
                   </button>
                 )}
                 <Link
@@ -260,7 +260,7 @@ export function Navbar() {
                   onClick={() => setDrawerOpen(false)}
                   className="mx-2 rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors active:bg-gray-50"
                 >
-                  {t('nav.profile')}
+                  Profile
                 </Link>
               </nav>
             </motion.aside>
@@ -291,7 +291,7 @@ export function Navbar() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('nav.search')}
+                  placeholder="Search products..."
                   className="flex-1 rounded-xl border border-gray-200 px-4 py-3 focus:border-[#E53935] focus:outline-none focus:ring-2 focus:ring-[#E53935]/20"
                   autoFocus
                 />
@@ -299,11 +299,11 @@ export function Navbar() {
                   type="submit"
                   className="rounded-xl bg-[#E53935] px-4 py-3 font-medium text-white"
                 >
-                  {t('common.search')}
+                  Search
                 </button>
               </form>
               <p className="mt-2 text-sm text-gray-500">
-                {t('nav.search')}
+                Search and filter products on the Shop page
               </p>
             </motion.div>
           </>

@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { useLanguage } from '../context/LanguageContext';
 import type { Product } from '../types';
 
 interface ProductModalProps {
@@ -12,12 +11,9 @@ interface ProductModalProps {
 export function ProductModal({ product, onClose }: ProductModalProps) {
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
-  const { t, translateProduct } = useLanguage();
-  
-  const translatedProduct = translateProduct(product);
 
   const handleAddToCart = () => {
-    addItem(translatedProduct);
+    addItem(product);
     setAdded(true);
     setTimeout(() => {
       onClose();
@@ -45,7 +41,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
         <div className="relative h-[28vh] min-h-[160px] shrink-0 overflow-hidden bg-gray-100 sm:aspect-4/3 sm:h-auto">
           <img
             src={product.image}
-            alt={translatedProduct.name}
+            alt={product.name}
             className="h-full w-full object-cover"
           />
           <button
@@ -65,10 +61,10 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           <h2 className="text-xl font-bold leading-tight text-gray-900 sm:text-2xl">
-            {translatedProduct.name}
+            {product.name}
           </h2>
           <p className="mt-2 text-sm leading-snug text-gray-600 sm:text-base">
-            {translatedProduct.description}
+            {product.description}
           </p>
           <p className="mt-3 text-lg font-bold text-[#E53935] sm:text-xl">
             ₹{product.price}
@@ -80,7 +76,7 @@ export function ProductModal({ product, onClose }: ProductModalProps) {
               className="w-full rounded-xl bg-[#E53935] py-3.5 font-semibold text-white transition-colors hover:bg-[#C62828] active:bg-[#B71C1C] touch-manipulation sm:py-4"
               whileTap={{ scale: 0.98 }}
             >
-              {added ? 'Added to cart ✓' : t('shop.addToCart')}
+              {added ? 'Added to cart ✓' : 'Add to Cart'}
             </motion.button>
             {added && (
               <motion.p

@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ProductCard } from '../components/ProductCard';
 import { ProductModal } from '../components/ProductModal';
 import { fetchProducts, fetchCategories } from '../lib/admin-data';
-import { useLanguage } from '../context/LanguageContext';
 import type { Product, Category } from '../types';
 
 export function Shop() {
@@ -17,7 +16,6 @@ export function Shop() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { t, translateProduct } = useLanguage();
 
   useEffect(() => {
     Promise.all([fetchProducts(), fetchCategories()])
@@ -42,16 +40,15 @@ export function Shop() {
     if (searchQuery) {
       list = list.filter(
         (p) => {
-          const translatedProduct = translateProduct(p);
           return (
-            translatedProduct.name.toLowerCase().includes(searchQuery) ||
-            (translatedProduct.description ?? '').toLowerCase().includes(searchQuery)
+            p.name.toLowerCase().includes(searchQuery) ||
+            (p.description ?? '').toLowerCase().includes(searchQuery)
           );
         }
       );
     }
     return list;
-  }, [products, categories, activeCategory, searchQuery, translateProduct]);
+  }, [products, categories, activeCategory, searchQuery]);
 
   if (error) {
     return (
@@ -61,7 +58,7 @@ export function Shop() {
     );
   }
 
-  const categoryTabs = [{ id: 'all', slug: 'all', name: t('home.categories'), image: '' }, ...categories];
+  const categoryTabs = [{ id: 'all', slug: 'all', name: 'Categories', image: '' }, ...categories];
 
   return (
     <motion.div
@@ -71,7 +68,7 @@ export function Shop() {
       className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-10"
     >
       <h1 className="mb-8 text-2xl font-bold text-gray-900 md:text-3xl">
-        {t('nav.shop')}
+        Shop
         {searchQuery && (
           <span className="ml-2 text-lg font-normal text-gray-500">
             — &quot;{searchParams.get('q')}&quot;
@@ -107,7 +104,6 @@ export function Shop() {
       {/* Mobile: 3-column grid, tap product to open modal */}
       <div className="grid grid-cols-3 gap-2 md:hidden">
         {filteredProducts.map((product) => {
-          const translatedProduct = translateProduct(product);
           return (
             <motion.button
               key={product.id}
@@ -119,12 +115,12 @@ export function Shop() {
               <div className="relative aspect-square overflow-hidden">
                 <img
                   src={product.image}
-                  alt={translatedProduct.name}
+                  alt={product.name}
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="flex flex-1 flex-col p-2">
-                <span className="line-clamp-2 text-xs font-medium text-gray-900">{translatedProduct.name}</span>
+                <span className="line-clamp-2 text-xs font-medium text-gray-900">{product.name}</span>
                 <span className="mt-0.5 text-sm font-bold text-[#E53935]">₹{product.price}</span>
               </div>
             </motion.button>

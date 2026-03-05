@@ -12,12 +12,10 @@ const menuItemClass =
   'flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-left transition-colors active:bg-accent-soft focus:bg-accent-soft focus:outline-none';
 
 export function Profile() {
-  const { user, isAuthenticated, login, signUp, logout, updateProfile, refreshProfile, uploadAvatar, resetPasswordForEmail, updatePassword } = useAuth();
+  const { user, isAuthenticated, login, signUp, logout, updateProfile, uploadAvatar, resetPasswordForEmail, updatePassword } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuthenticated) refreshProfile();
-  }, [isAuthenticated, refreshProfile]);
+  // Profile refresh is handled by AuthContext initialization
 
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');

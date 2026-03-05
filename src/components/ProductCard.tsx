@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { useLanguage } from '../context/LanguageContext';
 import type { Product } from '../types';
 
 interface ProductCardProps {
@@ -12,23 +11,20 @@ interface ProductCardProps {
 
 export function ProductCard({ product, showBadge = false, index = 0 }: ProductCardProps) {
   const { addItem } = useCart();
-  const { t, translateProduct } = useLanguage();
-  
-  const translatedProduct = translateProduct(product);
 
   const badge =
     showBadge === 'popular'
-      ? { label: t('shop.popular'), className: 'bg-[#E53935] text-white' }
+      ? { label: 'Popular', className: 'bg-[#E53935] text-white' }
       : showBadge === 'special'
-        ? { label: t('shop.special'), className: 'bg-[#FFD54F] text-[#C62828]' }
+        ? { label: 'Special', className: 'bg-[#FFD54F] text-[#C62828]' }
         : null;
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Add translated product to cart
-    addItem(translatedProduct);
+    // Add product to cart
+    addItem(product);
   };
 
   return (
@@ -44,7 +40,7 @@ export function ProductCard({ product, showBadge = false, index = 0 }: ProductCa
           <div className="relative aspect-[4/3] overflow-hidden">
             <img
               src={product.image}
-              alt={translatedProduct.name}
+              alt={product.name}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             {badge && (
@@ -56,8 +52,8 @@ export function ProductCard({ product, showBadge = false, index = 0 }: ProductCa
             )}
           </div>
           <div className="flex flex-1 flex-col p-4 md:p-5">
-            <h3 className="font-semibold text-gray-900 md:text-lg">{translatedProduct.name}</h3>
-            <p className="mt-0.5 line-clamp-2 text-sm text-gray-500">{translatedProduct.description}</p>
+            <h3 className="font-semibold text-gray-900 md:text-lg">{product.name}</h3>
+            <p className="mt-0.5 line-clamp-2 text-sm text-gray-500">{product.description}</p>
             <p className="mt-2 text-lg font-bold text-[#E53935]">₹{product.price}</p>
           </div>
         </Link>
@@ -67,7 +63,7 @@ export function ProductCard({ product, showBadge = false, index = 0 }: ProductCa
             className="w-full rounded-xl bg-[#E53935] py-3 font-semibold text-white transition-colors hover:bg-[#C62828]"
             whileTap={{ scale: 0.98 }}
           >
-            {t('shop.addToCart')}
+            Add to Cart
           </motion.button>
         </div>
       </motion.article>
