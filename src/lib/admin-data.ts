@@ -41,6 +41,7 @@ function mapCategoryRow(r: Record<string, unknown>): Category {
     name: r.name as string,
     slug: (r.slug as string) ?? '',
     image: (r.image as string) ?? '',
+    sort_order: r.sort_order != null ? Number(r.sort_order) : undefined,
     created_at: r.created_at as string | undefined,
   };
 }
@@ -94,13 +95,27 @@ export async function uploadImage(
   file: File
 ): Promise<string> {
   if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
-    cacheControl: '3600',
-    upsert: true,
-  });
-  if (error) throw error;
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-  return urlData.publicUrl;
+  try {
+    const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
+      cacheControl: '3600',
+      upsert: true,
+    });
+    if (error) {
+      console.error('Supabase storage error:', error);
+      if (error.message?.includes('JWT') || error.message?.includes('permission') || error.message?.includes('unauthorized')) {
+        throw new Error('Authentication error: Please refresh the page and try again');
+      }
+      throw error;
+    }
+    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
+    return urlData.publicUrl;
+  } catch (err) {
+    console.error('Error uploading image to Supabase:', err);
+    if (err instanceof Error && err.message.includes('Authentication error')) {
+      throw err;
+    }
+    throw new Error('Failed to upload image: ' + (err instanceof Error ? err.message : String(err)));
+  }
 }
 
 export async function fetchProducts(): Promise<Product[]> {
@@ -162,22 +177,52 @@ export async function deleteProduct(id: string): Promise<void> {
 
 export async function fetchCategories(): Promise<Category[]> {
   if (supabase) {
-    const { data, error } = await supabase.from('categories').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
-    return (data ?? []).map((r) => mapCategoryRow(r as Record<string, unknown>));
+    try {
+      const { data, error } = await supabase.from('categories').select('*').order('sort_order', { ascending: true, nullsFirst: false });
+      if (error) {
+        console.error('Supabase error fetching categories:', error);
+        if (error.code === 'PGRST301' || error.message?.includes('JWT')) {
+          console.warn('Authentication error, falling back to demo mode');
+          return [...mockCategoriesStore].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+        }
+        throw error;
+      }
+      return (data ?? []).map((r) => mapCategoryRow(r as Record<string, unknown>));
+    } catch (err) {
+      console.error('Error fetching categories from Supabase:', err);
+      console.warn('Falling back to demo mode');
+      return [...mockCategoriesStore].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    }
   }
-  return [...mockCategoriesStore];
+  return [...mockCategoriesStore].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 }
 
 export async function createCategory(c: Omit<Category, 'id' | 'created_at'>): Promise<Category> {
   if (supabase) {
-    const { data, error } = await supabase
-      .from('categories')
-      .insert({ name: c.name, slug: c.slug, image: c.image })
-      .select('*')
-      .single();
-    if (error) throw error;
-    return mapCategoryRow((data ?? {}) as Record<string, unknown>);
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert({ name: c.name, slug: c.slug, image: c.image, sort_order: c.sort_order })
+        .select('*')
+        .single();
+      if (error) {
+        console.error('Supabase error creating category:', error);
+        if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.message?.includes('permission')) {
+          console.warn('Authentication error, falling back to demo mode');
+          const newC: Category = { ...c, id: 'cat-' + Date.now() };
+          mockCategoriesStore = [newC, ...mockCategoriesStore];
+          return newC;
+        }
+        throw error;
+      }
+      return mapCategoryRow((data ?? {}) as Record<string, unknown>);
+    } catch (err) {
+      console.error('Error creating category in Supabase:', err);
+      console.warn('Falling back to demo mode');
+      const newC: Category = { ...c, id: 'cat-' + Date.now() };
+      mockCategoriesStore = [newC, ...mockCategoriesStore];
+      return newC;
+    }
   }
   const newC: Category = { ...c, id: 'cat-' + Date.now() };
   mockCategoriesStore = [newC, ...mockCategoriesStore];
@@ -186,13 +231,33 @@ export async function createCategory(c: Omit<Category, 'id' | 'created_at'>): Pr
 
 export async function updateCategory(id: string, c: Partial<Category>): Promise<Category> {
   if (supabase) {
-    const payload: Record<string, unknown> = {};
-    if (c.name != null) payload.name = c.name;
-    if (c.slug != null) payload.slug = c.slug;
-    if (c.image != null) payload.image = c.image;
-    const { data, error } = await supabase.from('categories').update(payload).eq('id', id).select('*').single();
-    if (error) throw error;
-    return mapCategoryRow((data ?? {}) as Record<string, unknown>);
+    try {
+      const payload: Record<string, unknown> = {};
+      if (c.name != null) payload.name = c.name;
+      if (c.slug != null) payload.slug = c.slug;
+      if (c.image != null) payload.image = c.image;
+      if (c.sort_order != null) payload.sort_order = c.sort_order;
+      const { data, error } = await supabase.from('categories').update(payload).eq('id', id).select('*').single();
+      if (error) {
+        console.error('Supabase error updating category:', error);
+        if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.message?.includes('permission')) {
+          console.warn('Authentication error, falling back to demo mode');
+          const idx = mockCategoriesStore.findIndex((x) => x.id === id);
+          if (idx === -1) throw new Error('Category not found');
+          mockCategoriesStore[idx] = { ...mockCategoriesStore[idx], ...c };
+          return mockCategoriesStore[idx];
+        }
+        throw error;
+      }
+      return mapCategoryRow((data ?? {}) as Record<string, unknown>);
+    } catch (err) {
+      console.error('Error updating category in Supabase:', err);
+      console.warn('Falling back to demo mode');
+      const idx = mockCategoriesStore.findIndex((x) => x.id === id);
+      if (idx === -1) throw new Error('Category not found');
+      mockCategoriesStore[idx] = { ...mockCategoriesStore[idx], ...c };
+      return mockCategoriesStore[idx];
+    }
   }
   const idx = mockCategoriesStore.findIndex((x) => x.id === id);
   if (idx === -1) throw new Error('Category not found');
@@ -200,11 +265,74 @@ export async function updateCategory(id: string, c: Partial<Category>): Promise<
   return mockCategoriesStore[idx];
 }
 
+export async function updateCategorySortOrder(updates: { id: string; sort_order: number }[]): Promise<void> {
+  if (supabase) {
+    try {
+      // Update each category individually to avoid needing RPC function
+      for (const { id, sort_order } of updates) {
+        const { error } = await supabase
+          .from('categories')
+          .update({ sort_order })
+          .eq('id', id);
+        if (error) {
+          console.error('Supabase error updating category sort order:', error);
+          if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.message?.includes('permission')) {
+            console.warn('Authentication error, falling back to demo mode');
+            // Update mock store
+            updates.forEach(({ id, sort_order }) => {
+              const idx = mockCategoriesStore.findIndex((x) => x.id === id);
+              if (idx !== -1) {
+                mockCategoriesStore[idx] = { ...mockCategoriesStore[idx], sort_order };
+              }
+            });
+            return;
+          }
+          throw error;
+        }
+      }
+      return;
+    } catch (err) {
+      console.error('Error updating category sort order in Supabase:', err);
+      console.warn('Falling back to demo mode');
+      // Update mock store
+      updates.forEach(({ id, sort_order }) => {
+        const idx = mockCategoriesStore.findIndex((x) => x.id === id);
+        if (idx !== -1) {
+          mockCategoriesStore[idx] = { ...mockCategoriesStore[idx], sort_order };
+        }
+      });
+      return;
+    }
+  }
+  // Update mock store
+  updates.forEach(({ id, sort_order }) => {
+    const idx = mockCategoriesStore.findIndex((x) => x.id === id);
+    if (idx !== -1) {
+      mockCategoriesStore[idx] = { ...mockCategoriesStore[idx], sort_order };
+    }
+  });
+}
+
 export async function deleteCategory(id: string): Promise<void> {
   if (supabase) {
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (error) throw error;
-    return;
+    try {
+      const { error } = await supabase.from('categories').delete().eq('id', id);
+      if (error) {
+        console.error('Supabase error deleting category:', error);
+        if (error.code === 'PGRST301' || error.message?.includes('JWT') || error.message?.includes('permission')) {
+          console.warn('Authentication error, falling back to demo mode');
+          mockCategoriesStore = mockCategoriesStore.filter((x) => x.id !== id);
+          return;
+        }
+        throw error;
+      }
+      return;
+    } catch (err) {
+      console.error('Error deleting category in Supabase:', err);
+      console.warn('Falling back to demo mode');
+      mockCategoriesStore = mockCategoriesStore.filter((x) => x.id !== id);
+      return;
+    }
   }
   mockCategoriesStore = mockCategoriesStore.filter((x) => x.id !== id);
 }

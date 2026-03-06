@@ -1,15 +1,35 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
 import type { Category } from '../../types';
 import {
   fetchCategories,
   createCategory,
   updateCategory,
   deleteCategory,
+  updateCategorySortOrder,
   uploadImage,
   STORAGE_BUCKET_CATEGORIES,
 } from '../../lib/admin-data';
-import { DataTable, type Column } from '../../components/admin/DataTable';
 import { ModalForm } from '../../components/admin/ModalForm';
 import { EmptyState } from '../../components/admin/EmptyState';
 import { SkeletonTableRows } from '../../components/admin/SkeletonCard';
@@ -23,6 +43,14 @@ export function AdminCategories() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const load = () => {
     setLoading(true);
@@ -70,7 +98,8 @@ export function AdminCategories() {
       if (editing) {
         await updateCategory(editing.id, { ...form, image: imageUrl });
       } else {
-        await createCategory({ ...form, slug: form.slug || slugify(form.name), image: imageUrl });
+        const sortOrder = categories.length; // Add at the end
+        await createCategory({ ...form, slug: form.slug || slugify(form.name), image: imageUrl, sort_order: sortOrder });
       }
       setModalOpen(false);
       load();
@@ -100,26 +129,75 @@ export function AdminCategories() {
     }
   };
 
-  const columns: Column<Category>[] = [
-    {
-      key: 'image',
-      header: 'Image',
-      render: (r) => (
-        <img src={r.image} alt="" className="h-12 w-12 rounded-xl object-cover" />
-      ),
-    },
-    { key: 'name', header: 'Name', render: (r) => <span className="font-medium">{r.name}</span> },
-    {
-      key: 'actions',
-      header: 'Actions',
-      render: (r) => (
-        <div className="flex gap-2">
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setReordering(true);
+      const oldIndex = categories.findIndex((item) => item.id === active.id);
+      const newIndex = categories.findIndex((item) => item.id === over?.id);
+      
+      const newCategories = arrayMove(categories, oldIndex, newIndex);
+      setCategories(newCategories);
+
+      try {
+        const updates = newCategories.map((category, index) => ({
+          id: category.id,
+          sort_order: index,
+        }));
+        await updateCategorySortOrder(updates);
+      } catch (err) {
+        setError(String(err));
+        load(); // Reload to restore original order
+      } finally {
+        setReordering(false);
+      }
+    }
+  };
+
+  const SortableCategoryItem = ({ category }: { category: Category }) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({ id: category.id });
+
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm"
+      >
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab touch-none text-gray-400 hover:text-gray-600 shrink-0"
+        >
+          <GripVertical className="h-5 w-5" />
+        </div>
+        
+        <img src={category.image} alt="" className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover shrink-0" />
+        
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-gray-900 text-sm sm:text-base truncate block">{category.name}</span>
+        </div>
+        
+        <div className="flex gap-1 sm:gap-2 shrink-0">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="button"
-            onClick={() => openEdit(r)}
-            className="rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
+            onClick={() => openEdit(category)}
+            className="rounded-xl bg-gray-100 px-2 py-1.5 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium text-gray-700 hover:bg-gray-200"
           >
             Edit
           </motion.button>
@@ -127,22 +205,22 @@ export function AdminCategories() {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="button"
-            onClick={() => handleDelete(r)}
-            className="rounded-xl bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100"
+            onClick={() => handleDelete(category)}
+            className="rounded-xl bg-red-50 px-2 py-1.5 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium text-red-600 hover:bg-red-100"
           >
             Delete
           </motion.button>
         </div>
-      ),
-    },
-  ];
+      </div>
+    );
+  };
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">Categories</h1>
-          <p className="mt-1 text-gray-500">Manage product categories</p>
+          <p className="mt-1 text-gray-500">Manage product categories and their display order</p>
         </div>
         <motion.button
           whileHover={{ scale: 1.02 }}
@@ -171,7 +249,36 @@ export function AdminCategories() {
           action={{ label: 'Add Category', onClick: openCreate }}
         />
       ) : (
-        <DataTable columns={columns} data={categories} keyExtractor={(r) => r.id} />
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 overflow-x-auto">
+            <div className="mb-4 flex items-center gap-2 min-w-0">
+              <GripVertical className="h-5 w-5 text-gray-400 shrink-0" />
+              <span className="text-sm font-medium text-gray-600 truncate">
+                Drag categories to reorder their display priority
+              </span>
+              {reordering && (
+                <span className="text-sm text-blue-600 shrink-0">Updating order...</span>
+              )}
+            </div>
+            
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={categories.map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3 min-w-full">
+                  {categories.map((category) => (
+                    <SortableCategoryItem key={category.id} category={category} />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+        </div>
       )}
 
       <ModalForm
