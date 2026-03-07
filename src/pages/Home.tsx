@@ -3,21 +3,22 @@ import { motion } from 'framer-motion';
 import { OfferBanner } from '../components/OfferBanner';
 import { CategoryScroll } from '../components/CategoryScroll';
 import { ProductCard } from '../components/ProductCard';
-import { offerBanners } from '../data/offers';
-import { fetchProducts, fetchCategories } from '../lib/admin-data';
-import type { Product, Category } from '../types';
+import { fetchProducts, fetchCategories, fetchBanners } from '../lib/admin-data';
+import type { Product, Category, OfferBanner as OfferBannerType } from '../types';
 
 export function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [banners, setBanners] = useState<OfferBannerType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories()])
-      .then(([p, c]) => {
+    Promise.all([fetchProducts(), fetchCategories(), fetchBanners()])
+      .then(([p, c, b]) => {
         setProducts(p);
         setCategories(c);
+        setBanners(b);
       })
       .catch((e) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
@@ -43,7 +44,7 @@ export function Home() {
     >
       {/* 1. Offer Banner Slider */}
       <section className="mb-10 md:mb-20">
-        <OfferBanner offers={offerBanners} />
+        <OfferBanner offers={banners} />
       </section>
 
       {/* 2. Categories Horizontal Scroll - from database */}

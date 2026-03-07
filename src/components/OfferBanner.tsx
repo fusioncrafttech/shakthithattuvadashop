@@ -14,10 +14,24 @@ export function OfferBanner({ offers }: OfferBannerProps) {
   const { isAuthenticated, openAuthModal } = useAuth();
 
   const handleCtaClick = () => {
+    const redirectUrl = current.redirect_url;
     if (isAuthenticated) {
-      navigate('/checkout');
+      if (redirectUrl) {
+        // If banner has a specific redirect URL, use it
+        if (redirectUrl.startsWith('http')) {
+          // External URL - open in new tab
+          window.open(redirectUrl, '_blank');
+        } else {
+          // Internal route - navigate within app
+          navigate(redirectUrl);
+        }
+      } else {
+        // Default to shop page if no redirect URL specified
+        navigate('/shop');
+      }
     } else {
-      openAuthModal('/checkout');
+      // If not authenticated, open auth modal with the intended redirect
+      openAuthModal(redirectUrl || '/shop');
     }
   };
 

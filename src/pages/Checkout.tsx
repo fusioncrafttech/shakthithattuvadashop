@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 
 type Step = 1 | 2;
@@ -16,8 +17,11 @@ export function Checkout() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showQRScanner, setShowQRScanner] = useState(false);
+  const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const { items, totalPrice, clearCart } = useCart();
-  const { isAuthenticated, openAuthModal, isLoading } = useAuth();
+  const { isAuthenticated, openAuthModal, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,20 +46,66 @@ export function Checkout() {
     }
   };
 
-  const handlePlaceOrder = () => {
-    clearCart();
-    navigate('/');
+  const saveOrder = async () => {
+    if (!user || !supabase) return null;
+    
+    setIsSavingOrder(true);
+    try {
+      const orderData = {
+        user_id: user.id,
+        user_email: user.email,
+        user_name: user.name,
+        status: 'pending',
+        total: totalPrice,
+        items: items.map(({ product, quantity }) => ({
+          product_id: product.id,
+          product_name: product.name,
+          product_price: product.price,
+          quantity,
+          subtotal: product.price * quantity
+        })),
+        delivery_name: form.name,
+        delivery_mobile: form.mobile,
+        delivery_address: form.address,
+      };
+
+      const { data, error } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error) {
+      console.error('Error saving order:', error);
+      return null;
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  const handlePlaceOrder = async () => {
+    const savedOrderId = await saveOrder();
+    if (savedOrderId) {
+      setOrderId(savedOrderId);
+      setShowOrderConfirmation(true);
+    } else {
+      // Fallback if order saving fails
+      clearCart();
+      navigate('/');
+    }
   };
 
   const handleUPIPayment = () => {
     // Generate UPI payment URL with amount
-    const upiUrl = `upi://pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment`;
+    const upiUrl = `upi://pay?pa=9790461432-1@okbizaxis&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment`;
     
     // Try to open specific UPI apps in order of preference
     const upiApps = [
-      { name: 'GPay', url: `gpay://upi/pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
-      { name: 'PhonePe', url: `phonepe://upi/pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
-      { name: 'Paytm', url: `paytmmp://upi/pay?pa=shakthithattuvada@ybl&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
+      { name: 'GPay', url: `gpay://upi/pay?pa=9790461432-1@okbizaxis&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
+      { name: 'PhonePe', url: `phonepe://upi/pay?pa=9790461432-1@okbizaxis&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
+      { name: 'Paytm', url: `paytmmp://upi/pay?pa=9790461432-1@okbizaxis&pn=Shakthi Thattuvada Set&am=${totalPrice}&cu=INR&tn=Order Payment` },
       { name: 'Generic UPI', url: upiUrl }
     ];
     
@@ -265,7 +315,7 @@ export function Checkout() {
                   </div>
                 </div>
                 <div className="rounded-lg bg-gray-100 p-2">
-                  <p className="text-xs font-mono text-gray-700">shakthithattuvada@ybl</p>
+                  <p className="text-xs font-mono text-gray-700">9790461432-1@okbizaxis</p>
                 </div>
               </div>
               
@@ -280,6 +330,61 @@ export function Checkout() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Order Confirmation Modal */}
+      {showOrderConfirmation && orderId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-md rounded-2xl bg-white p-6 text-center"
+          >
+            <div className="mb-4 flex justify-center">
+              <div className="rounded-full bg-green-100 p-4">
+                <svg className="h-12 w-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+            
+            <h3 className="mb-2 text-xl font-bold text-gray-900">Order Placed Successfully!</h3>
+            <p className="mb-4 text-gray-600">Your order has been placed and will be delivered soon.</p>
+            
+            <div className="mb-6 rounded-lg bg-gray-50 p-3">
+              <p className="text-sm font-medium text-gray-900">Order ID:</p>
+              <p className="font-mono text-sm text-gray-700">{orderId}</p>
+            </div>
+            
+            <div className="mb-6 rounded-lg bg-gray-50 p-3">
+              <p className="text-sm font-medium text-gray-900">Total Amount:</p>
+              <p className="text-xl font-bold text-[#E53935]">₹{totalPrice}</p>
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setShowOrderConfirmation(false);
+                  clearCart();
+                  navigate('/history');
+                }}
+                className="w-full rounded-xl bg-[#E53935] py-3 font-semibold text-white"
+              >
+                View Order History
+              </button>
+              <button
+                onClick={() => {
+                  setShowOrderConfirmation(false);
+                  clearCart();
+                  navigate('/');
+                }}
+                className="w-full rounded-xl border border-gray-300 py-3 font-medium text-gray-700"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </motion.div>

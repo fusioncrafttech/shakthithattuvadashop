@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { CartProvider } from './context/CartContext';
 import { Layout } from './components/Layout';
 import { LoadingScreen } from './components/LoadingScreen';
@@ -55,7 +56,9 @@ function App() {
               path="admin"
               element={
                 <AdminGuard>
-                  <AdminLayout />
+                  <NotificationProvider>
+                    <AdminLayout />
+                  </NotificationProvider>
                 </AdminGuard>
               }
             >
@@ -66,7 +69,7 @@ function App() {
               <Route path="gallery" element={<AdminGallery />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="users" element={<AdminUsers />} />
-              <Route path="bulkorders" element={<AdminBulkOrders />} />
+              <Route path="bulk-orders" element={<AdminBulkOrders />} />
             </Route>
           </Routes>
         </BrowserRouter>

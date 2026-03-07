@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface AdminNavbarProps {
   sidebarCollapsed: boolean;
@@ -30,6 +31,7 @@ export function AdminNavbar({ onMenuClick }: AdminNavbarProps) {
       </div>
 
       <div className="relative flex shrink-0 items-center gap-2 lg:gap-4">
+        <NotificationDropdown />
         <div className="hidden h-8 w-px bg-gray-200 sm:block" />
         <button
           type="button"

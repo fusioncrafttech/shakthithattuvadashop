@@ -192,7 +192,7 @@ export function Navbar() {
               aria-label="Navigation menu"
             >
               <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-4">
-                <span className="text-sm font-semibold uppercase tracking-wider text-gray-500">{('common.menu')}</span>
+                <span className="text-sm font-semibold uppercase tracking-wider text-gray-500">Menu</span>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}

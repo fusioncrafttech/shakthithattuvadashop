@@ -20,26 +20,11 @@ export function ShopStatusIndicator() {
 
     fetchShopStatus();
     
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('shop_status_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'shop_status'
-        },
-        () => {
-          fetchShopStatus();
-        }
-      )
-      .subscribe();
+    // Use polling instead of real-time subscription to avoid WebSocket errors
+    const pollingInterval = setInterval(fetchShopStatus, 30000);
 
     return () => {
-      if (supabase) {
-        supabase.removeChannel(channel);
-      }
+      clearInterval(pollingInterval);
     };
   }, []);
 
@@ -50,7 +35,8 @@ export function ShopStatusIndicator() {
       const { data, error } = await supabase.rpc('get_current_shop_status');
       
       if (error) {
-        console.error('Error fetching shop status:', error);
+        console.error('ShopStatusIndicator: Error fetching shop status:', error);
+        // Don't throw error, just log it and continue
         return;
       }
 
@@ -58,7 +44,7 @@ export function ShopStatusIndicator() {
         setStatus(data[0]);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('ShopStatusIndicator: Error:', error);
     } finally {
       setLoading(false);
     }
