@@ -31,18 +31,20 @@ export default function Handcart() {
 
   useEffect(() => {
     if (!showBanner || products.length > 0) return;
-    setLoading(true);
-    Promise.all([fetchProducts(), fetchCategories()])
-      .then(([allProducts, categories]) => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const [allProducts, categories] = await Promise.all([fetchProducts(), fetchCategories()]);
         const ninetiesCategory = categories.find((c) => c.slug === NINETIES_CATEGORY_SLUG);
-        const categoryId = ninetiesCategory?.id;
-        const filtered = categoryId
-          ? allProducts.filter((p) => p.categoryId === categoryId)
-          : allProducts;
+        const filtered = ninetiesCategory ? allProducts.filter((p) => p.categoryId === ninetiesCategory.id) : allProducts;
         setProducts(filtered);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, [showBanner, products.length]);
 
   return (

@@ -175,29 +175,29 @@ export function AdminCategories() {
       <div
         ref={setNodeRef}
         style={style}
-        className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 sm:p-4 shadow-sm"
+        className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
       >
         <div
           {...attributes}
           {...listeners}
-          className="cursor-grab touch-none text-gray-400 hover:text-gray-600 shrink-0"
+          className="cursor-grab touch-none text-gray-400 hover:text-gray-600"
         >
           <GripVertical className="h-5 w-5" />
         </div>
         
-        <img src={category.image} alt="" className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl object-cover shrink-0" />
+        <img src={category.image} alt="" className="h-12 w-12 rounded-xl object-cover" />
         
-        <div className="flex-1 min-w-0">
-          <span className="font-medium text-gray-900 text-sm sm:text-base truncate block">{category.name}</span>
+        <div className="flex-1">
+          <span className="font-medium text-gray-900">{category.name}</span>
         </div>
         
-        <div className="flex gap-1 sm:gap-2 shrink-0">
+        <div className="flex gap-2">
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             type="button"
             onClick={() => openEdit(category)}
-            className="rounded-xl bg-gray-100 px-2 py-1.5 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium text-gray-700 hover:bg-gray-200"
+            className="rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200"
           >
             Edit
           </motion.button>
@@ -206,7 +206,7 @@ export function AdminCategories() {
             whileTap={{ scale: 0.95 }}
             type="button"
             onClick={() => handleDelete(category)}
-            className="rounded-xl bg-red-50 px-2 py-1.5 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium text-red-600 hover:bg-red-100"
+            className="rounded-xl bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-100"
           >
             Delete
           </motion.button>
@@ -250,14 +250,14 @@ export function AdminCategories() {
         />
       ) : (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 overflow-x-auto">
-            <div className="mb-4 flex items-center gap-2 min-w-0">
-              <GripVertical className="h-5 w-5 text-gray-400 shrink-0" />
-              <span className="text-sm font-medium text-gray-600 truncate">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="mb-4 flex items-center gap-2">
+              <GripVertical className="h-5 w-5 text-gray-400" />
+              <span className="text-sm font-medium text-gray-600">
                 Drag categories to reorder their display priority
               </span>
               {reordering && (
-                <span className="text-sm text-blue-600 shrink-0">Updating order...</span>
+                <span className="text-sm text-blue-600">Updating order...</span>
               )}
             </div>
             
@@ -270,7 +270,7 @@ export function AdminCategories() {
                 items={categories.map(c => c.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-3 min-w-full">
+                <div className="space-y-3">
                   {categories.map((category) => (
                     <SortableCategoryItem key={category.id} category={category} />
                   ))}

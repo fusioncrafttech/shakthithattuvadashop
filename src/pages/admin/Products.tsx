@@ -136,7 +136,9 @@ export function AdminProducts() {
     setCategoryOpen(false);
     setForm({ ...defaultForm, categoryId: categories[0]?.id ?? '' });
     setImageFile(null);
-    imageInputRef.current && (imageInputRef.current.value = '');
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
     setFormKey((k) => k + 1);
     setModalOpen(true);
   };
@@ -157,7 +159,9 @@ export function AdminProducts() {
       is_featured: p.is_featured ?? false,
     });
     setImageFile(null);
-    imageInputRef.current && (imageInputRef.current.value = '');
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
     setFormKey((k) => k + 1);
     setModalOpen(true);
   };
@@ -261,7 +265,9 @@ export function AdminProducts() {
       // Reset form and close modal
       setForm({ ...defaultForm, categoryId: categories[0]?.id ?? '' });
       setImageFile(null);
-      imageInputRef.current && (imageInputRef.current.value = '');
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
       setEditing(null);
       setError(null);
       setFormKey((k) => k + 1);
@@ -378,7 +384,7 @@ export function AdminProducts() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.95 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full z-20 mt-2 w-80 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl"
+                  className="fixed left-1/2 top-auto z-50 mt-2 w-80 max-w-[calc(100vw-1rem)] -translate-x-1/2 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:translate-x-0 sm:w-96 sm:max-w-none"
                 >
                   <div className="space-y-4">
                     {/* Search */}

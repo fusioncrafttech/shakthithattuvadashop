@@ -43,7 +43,18 @@ export function AdminOrders() {
   };
 
   useEffect(() => {
-    load();
+    const loadData = () => {
+      setLoading(true);
+      fetchOrders({
+        from: dateFrom || undefined,
+        to: dateTo || undefined,
+        status: statusFilter || undefined,
+      })
+        .then(setOrders)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    };
+    loadData();
   }, [dateFrom, dateTo, statusFilter]);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {

@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import { getDashboardStats, fetchOrders, fetchProducts } from '../lib/admin-data';
-import type { Order, Product } from '../types';
 
 export interface Notification {
   id: string;
@@ -9,7 +8,7 @@ export interface Notification {
   message: string;
   timestamp: Date;
   read: boolean;
-  data?: any;
+  data?: unknown;
 }
 
 interface NotificationContextType {
@@ -89,7 +88,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       if (currentLowStockCount > lastLowStockCount) {
         const lowStockProducts = products.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) < 10);
         const newLowStockItems = lowStockProducts.filter(p => 
-          !notifications.some(n => n.type === 'low_stock' && n.data?.id === p.id)
+          !notifications.some(n => n.type === 'low_stock' && (n.data as { id: string })?.id === p.id)
         );
         
         newLowStockItems.forEach(product => {
@@ -112,9 +111,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   // Initial load and periodic refresh
   useEffect(() => {
-    refreshNotifications();
-
-    const interval = setInterval(refreshNotifications, 30000); // Refresh every 30 seconds
+    const performRefresh = () => {
+      refreshNotifications();
+    };
+    
+    performRefresh();
+    const interval = setInterval(performRefresh, 30000); // Refresh every 30 seconds
 
     return () => clearInterval(interval);
   }, [refreshNotifications]);

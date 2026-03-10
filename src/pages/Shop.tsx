@@ -28,7 +28,12 @@ export function Shop() {
   }, []);
 
   useEffect(() => {
-    if (categorySlug) setActiveCategory(categorySlug);
+    const updateCategory = () => {
+      if (categorySlug) {
+        setActiveCategory(categorySlug);
+      }
+    };
+    updateCategory();
   }, [categorySlug]);
 
   const filteredProducts = useMemo(() => {

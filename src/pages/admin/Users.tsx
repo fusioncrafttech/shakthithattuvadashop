@@ -9,16 +9,15 @@ export function AdminUsers() {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = () => {
-    setLoading(true);
-    fetchProfiles()
-      .then(setUsers)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  };
-
   useEffect(() => {
-    load();
+    const loadData = () => {
+      setLoading(true);
+      fetchProfiles()
+        .then(setUsers)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    };
+    loadData();
   }, []);
 
   const handleRoleChange = async (id: string, role: UserRole) => {

@@ -73,7 +73,9 @@ function getStoredRole(): UserRole {
   try {
     const r = localStorage.getItem(ROLE_STORAGE_KEY);
     if (r === 'admin' || r === 'user') return r;
-  } catch {}
+  } catch {
+    // Silently ignore localStorage errors
+  }
   return 'user';
 }
 
@@ -194,11 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (storedUser) {
           // If no session but we have stored user, keep the stored user
           // Don't automatically logout - let the user stay logged in with cached data
-          console.log('No Supabase session, using cached user session with role:', storedUser.role);
-          // Ensure the stored user has the correct role by checking if we need to fallback to demo mode
-          if (!client || !isSupabaseConfigured()) {
-            console.log('Supabase not configured, using demo mode with stored user');
-          }
+          console.log('No Supabase session, using cached user session');
         } else {
           console.log('No stored user or Supabase session found');
         }
@@ -207,7 +205,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Don't clear user on error, keep cached session if available
         const storedUser = loadStoredUser();
         if (storedUser) {
-          console.log('Error occurred, using cached user with role:', storedUser.role);
+          console.log('Error occurred, using cached user');
           setUser(storedUser);
         }
       } finally {

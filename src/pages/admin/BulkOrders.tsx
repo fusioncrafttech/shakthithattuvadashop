@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Package, Phone, MessageCircle, Mail, Save, RefreshCw, Users, Calendar } from 'lucide-react';
+import { Package, Phone, MessageCircle, Save, RefreshCw, Users, Calendar } from 'lucide-react';
 import { bulkOrderService } from '../../lib/bulkOrderService';
 import type { BulkOrderConfig, BulkOrderEnquiry } from '../../types/bulkOrder';
 
